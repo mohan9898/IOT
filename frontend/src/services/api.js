@@ -92,6 +92,10 @@ class ApiService {
     return this.request('/devices/stats')
   }
 
+  async getDashboard() {
+    return this.request('/dashboard')
+  }
+
   // 设备类型相关
   async getDeviceTypes() {
     return this.request('/device-types')

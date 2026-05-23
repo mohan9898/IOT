@@ -86,6 +86,8 @@ func (h *Handler) SetupRoutes(r *gin.Engine) {
 		api.GET("/control/history/:device_id", h.GetCommandHistory)
 
 		api.GET("/ws", h.WebSocketHandler)
+
+		api.GET("/dashboard", h.GetDashboard)
 	}
 
 	// 静态文件服务
@@ -474,6 +476,62 @@ func (h *Handler) GetDeviceStats(c *gin.Context) {
 		"total":   total,
 		"online":  online,
 		"offline": offline,
+	})
+}
+
+func (h *Handler) GetDashboard(c *gin.Context) {
+	total, online, offline, _ := h.db.GetDeviceStats()
+
+	devices, _ := h.db.GetDevices()
+	typeCount := make(map[string]int)
+	var recentDevices []gin.H
+	for i, d := range devices {
+		typeCount[d.Type]++
+		if i >= len(devices)-5 {
+			recentDevices = append(recentDevices, gin.H{
+				"id":   d.ID,
+				"name": d.Name,
+				"type": d.Type,
+				"status": d.Status,
+			})
+		}
+	}
+
+	var typeDistribution []gin.H
+	for typeID, count := range typeCount {
+		dt, _ := h.db.GetDeviceType(typeID)
+		name := typeID
+		icon := "📦"
+		if dt != nil {
+			if n, ok := dt["name"].(string); ok {
+				name = n
+			}
+			if ic, ok := dt["icon"].(string); ok {
+				icon = ic
+			}
+		}
+		typeDistribution = append(typeDistribution, gin.H{
+			"type_id": typeID,
+			"name":    name,
+			"icon":    icon,
+			"count":   count,
+		})
+	}
+	if typeDistribution == nil {
+		typeDistribution = []gin.H{}
+	}
+	if recentDevices == nil {
+		recentDevices = []gin.H{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"stats": gin.H{
+			"total":   total,
+			"online":  online,
+			"offline": offline,
+		},
+		"type_distribution": typeDistribution,
+		"recent_devices":    recentDevices,
 	})
 }
 

@@ -2,6 +2,9 @@ import { reactive } from 'vue'
 import api from '../services/api'
 
 const store = reactive({
+  // 暴露 api 服务给子组件
+  api,
+
   // 状态
   loggedIn: false,
   token: '',
@@ -11,7 +14,9 @@ const store = reactive({
   stats: { total: 0, online: 0, offline: 0 },
   selectedDevice: null,
   ws: null,
-  
+  notificationsEnabled: false,
+  seenOnboarding: false,
+
   // 加载状态
   loading: {
     devices: false,
@@ -137,10 +142,71 @@ const store = reactive({
     this.ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
       if (data.topic && data.topic.includes('status')) {
+        const oldDevices = [...this.devices]
         this.loadDevices()
         this.loadStats()
+        
+        if (typeof data.payload === 'string') {
+          try {
+            const payload = JSON.parse(data.payload)
+            this.checkDeviceAlerts(oldDevices, payload)
+          } catch (e) {}
+        }
       }
     }
+    this.ws.onclose = () => {
+      setTimeout(() => {
+        if (this.loggedIn) {
+          this.connectWebSocket()
+        }
+      }, 5000)
+    }
+  },
+
+  checkDeviceAlerts(oldDevices, mqttPayload) {
+    if (!this.notificationsEnabled) return
+    if (!mqttPayload.id) return
+
+    const oldDevice = oldDevices.find(d => d.id === mqttPayload.id)
+    if (!oldDevice) return
+
+    const wasOnline = oldDevice.status === 'online'
+    const isOnline = mqttPayload.online !== false && mqttPayload.status !== 'offline'
+
+    if (wasOnline && !isOnline) {
+      this.sendNotification(
+        '设备离线告警',
+        `设备 "${mqttPayload.id}" 已离线`,
+        '⚠️'
+      )
+    } else if (!wasOnline && isOnline && oldDevice.status !== undefined) {
+      this.sendNotification(
+        '设备上线',
+        `设备 "${mqttPayload.id}" 已恢复在线`,
+        '✅'
+      )
+    }
+  },
+
+  sendNotification(title, body, icon) {
+    if (typeof Notification === 'undefined') return
+    
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body, icon: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" rx="6" fill="#3B82F6"/><text x="16" y="22" font-size="20" text-anchor="middle">' + icon + '</text></svg>'), tag: 'iot-device' })
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission()
+    }
+  },
+
+  enableNotifications() {
+    this.notificationsEnabled = true
+    if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+      Notification.requestPermission()
+    }
+  },
+
+  disableNotifications() {
+    this.notificationsEnabled = false
   },
 })
 
