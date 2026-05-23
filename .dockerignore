@@ -1,5 +1,5 @@
 
-# Git
+# Git and development files
 .git
 .gitignore
 
@@ -7,7 +7,7 @@
 .env
 .env.local
 
-# Build output
+# Build artifacts and binaries
 backend/iot-manager
 backend/data/
 dist/
@@ -21,11 +21,11 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# IDE
+# IDE and editor files
 .idea/
 .vscode/
 
-# Tests and coverage
+# Test files
 *.test
 coverage.txt
 coverage.html
