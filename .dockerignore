@@ -1,40 +1,31 @@
+
 # Git
 .git
 .gitignore
-README.md
-LICENSE
-.dockerignore
 
-# 开发文件
-*.md
-*.txt
+# Sensitive files
 .env
 .env.local
-.vscode
-.idea
 
-# 构建产物
+# Build output
 backend/iot-manager
 backend/data/
 dist/
-*.exe
-*.dll
-*.so
-*.dylib
-
-# 临时文件
-*.tmp
-*.log
-*.swp
-*.swo
-*~
-deploy.sh
-check-status.sh
-cleanup.sh
-quickstart.sh
-
-# Node
 node_modules/
 
-# Go
-vendor/
+# Temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Tests and coverage
+*.test
+coverage.txt
+coverage.html
