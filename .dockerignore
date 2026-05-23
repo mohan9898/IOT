@@ -1,19 +1,18 @@
 
-# Git and development files
+# Git
 .git
 .gitignore
 
-# Sensitive files
+# Sensitive
 .env
 .env.local
 
-# Build artifacts and binaries
+# Build artifacts
 backend/iot-manager
 backend/data/
-dist/
 node_modules/
 
-# Temporary files
+# Temp files
 *.log
 *.tmp
 *.swp
@@ -21,11 +20,11 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# IDE and editor files
+# IDE
 .idea/
 .vscode/
 
-# Test files
+# Tests
 *.test
 coverage.txt
 coverage.html
