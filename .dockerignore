@@ -1,30 +1,5 @@
-
-# Git
 .git
-.gitignore
-
-# Sensitive
 .env
 .env.local
-
-# Build artifacts
-backend/iot-manager
-backend/data/
-node_modules/
-
-# Temp files
-*.log
-*.tmp
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-
-# IDE
-.idea/
-.vscode/
-
-# Tests
 *.test
-coverage.txt
-coverage.html
+*.out
