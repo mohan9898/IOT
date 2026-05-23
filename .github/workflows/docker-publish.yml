@@ -3,16 +3,18 @@ name: Build and Publish Docker Image
 # 触发条件：推送到 main 分支，或创建 tag 时
 on:
   push:
-    branches: [ "main" ]
-    # 可选：只有修改以下文件时才触发构建
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
     paths:
       - 'Dockerfile'
       - 'backend/**'
       - 'frontend/**'
       - '.github/workflows/**'
-  tags: [ 'v*' ]
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - 'main'
 
 # 环境变量
 env:
@@ -60,7 +62,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -68,6 +70,7 @@ jobs:
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
+        if: github.event_name != 'pull_request'
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
