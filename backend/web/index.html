@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT 设备管理系统</title>
+    <script src="/web/libs/tailwind.js"></script>
+    <script src="/web/libs/vue.global.prod.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="app">
+        <div v-if="!loggedIn" class="min-h-screen flex items-center justify-center">
+            <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">IoT 设备管理系统</h2>
+                <div v-if="showRegister" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                        <input v-model="registerUsername" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="输入用户名（至少3个字符）">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                        <input v-model="registerPassword" type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="输入密码（至少6个字符）">
+                    </div>
+                    <button @click="register" class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition">注册</button>
+                    <p class="text-center text-gray-500 text-sm">已有账号？<button @click="showRegister = false" class="text-blue-500 hover:underline">立即登录</button></p>
+                </div>
+                <div v-else class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                        <input v-model="loginUsername" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="输入用户名">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                        <input v-model="loginPassword" type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="输入密码">
+                    </div>
+                    <button @click="login" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">登录</button>
+                    <p class="text-center text-gray-500 text-sm">还没有账号？<button @click="showRegister = true" class="text-blue-500 hover:underline">立即注册</button></p>
+                </div>
+                <p v-if="error" class="mt-4 text-red-500 text-center text-sm">{{ error }}</p>
+            </div>
+        </div>
+
+        <div v-else class="min-h-screen">
+            <nav class="bg-white shadow-md">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="flex justify-between items-center h-16">
+                        <div class="text-xl font-bold text-gray-800">IoT 设备管理</div>
+                        <div class="flex items-center space-x-4">
+                            <button @click="activeTab = 'devices'" :class="['px-4 py-2 rounded-lg', activeTab === 'devices' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100']">设备列表</button>
+                            <button @click="activeTab = 'add'" :class="['px-4 py-2 rounded-lg', activeTab === 'add' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100']">添加设备</button>
+                            <button @click="activeTab = 'types'" :class="['px-4 py-2 rounded-lg', activeTab === 'types' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100']">设备类型</button>
+                            <button @click="activeTab = 'settings'" :class="['px-4 py-2 rounded-lg', activeTab === 'settings' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100']">账户设置</button>
+                            <button @click="logout" class="px-4 py-2 text-red-500 hover:bg-red-50 rounded-lg">退出登录</button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="max-w-7xl mx-auto px-4 py-6">
+                <div v-if="activeTab === 'devices'">
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white rounded-xl shadow p-4">
+                            <div class="text-3xl font-bold text-gray-800">{{ stats.total }}</div>
+                            <div class="text-gray-500">总设备数</div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow p-4">
+                            <div class="text-3xl font-bold text-green-500">{{ stats.online }}</div>
+                            <div class="text-gray-500">在线设备</div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow p-4">
+                            <div class="text-3xl font-bold text-red-500">{{ stats.offline }}</div>
+                            <div class="text-gray-500">离线设备</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">设备列表</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div v-for="device in devices" :key="device.id" class="border rounded-lg p-4 hover:shadow-md transition cursor-pointer" @click="selectDevice(device)">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-2xl">{{ getDeviceIcon(device.type) }}</span>
+                                    <span :class="['px-2 py-1 rounded-full text-xs', device.status === 'online' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600']">{{ device.status === 'online' ? '在线' : '离线' }}</span>
+                                </div>
+                                <h4 class="font-medium text-gray-800">{{ device.name }}</h4>
+                                <p class="text-sm text-gray-500">{{ getDeviceTypeName(device.type) }}</p>
+                                <div class="mt-2 text-xs text-gray-400">{{ device.id }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'add'">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">添加新设备</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">设备ID</label>
+                                <input v-model="newDevice.id" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="设备唯一标识">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">设备名称</label>
+                                <input v-model="newDevice.name" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="设备名称">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">设备类型</label>
+                                <select v-model="newDevice.type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">选择设备类型</option>
+                                    <option v-for="dt in deviceTypes" :key="dt.type_id" :value="dt.type_id">{{ dt.icon }} {{ dt.name }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">备注信息</label>
+                                <input v-model="newDevice.note" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="可选备注">
+                            </div>
+                        </div>
+                        <button @click="addDevice" class="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">添加设备</button>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'types'">
+                    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">添加设备类型</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">类型标识</label>
+                                <input v-model="newType.type_id" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="如: smart_switch">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">类型名称</label>
+                                <input v-model="newType.name" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="如: 智能开关">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">图标</label>
+                                <input v-model="newType.icon" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="📦">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                                <textarea v-model="newType.description" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="设备类型描述"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">支持的命令 (逗号分隔)</label>
+                                <input v-model="newType.commands" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="ON, OFF, TOGGLE">
+                            </div>
+                        </div>
+                        <button @click="addDeviceType" class="mt-4 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition">添加类型</button>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">设备类型列表</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div v-for="dt in deviceTypes" :key="dt.type_id" class="border rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <span class="text-2xl mr-2">{{ dt.icon }}</span>
+                                    <div>
+                                        <h4 class="font-medium">{{ dt.name }}</h4>
+                                        <p class="text-xs text-gray-500">{{ dt.type_id }}</p>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-600">{{ dt.description }}</p>
+                                <div class="mt-2">
+                                    <span class="text-xs text-gray-500">支持命令:</span>
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        <span v-for="cmd in JSON.parse(dt.supported_commands)" :key="cmd" class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">{{ cmd }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'settings'">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">修改账户名</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">当前用户名</label>
+                                    <input v-model="settingsForm.oldUsername" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">新用户名</label>
+                                    <input v-model="settingsForm.newUsername" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="输入新用户名（至少3个字符）">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
+                                    <input v-model="settingsForm.password" type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="输入密码以确认">
+                                </div>
+                                <button @click="updateAccount" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">修改账户名</button>
+                            </div>
+                            <p v-if="settingsError" class="mt-2 text-red-500 text-sm">{{ settingsError }}</p>
+                            <p v-if="settingsSuccess" class="mt-2 text-green-500 text-sm">{{ settingsSuccess }}</p>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">修改密码</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                                    <input v-model="passwordForm.username" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">当前密码</label>
+                                    <input v-model="passwordForm.oldPassword" type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="输入当前密码">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">新密码</label>
+                                    <input v-model="passwordForm.newPassword" type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="输入新密码（至少6个字符）">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">确认新密码</label>
+                                    <input v-model="passwordForm.confirmPassword" type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="再次输入新密码">
+                                </div>
+                                <button @click="updatePassword" class="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition">修改密码</button>
+                            </div>
+                            <p v-if="passwordError" class="mt-2 text-red-500 text-sm">{{ passwordError }}</p>
+                            <p v-if="passwordSuccess" class="mt-2 text-green-500 text-sm">{{ passwordSuccess }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="selectedDevice" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="selectedDevice = null">
+                <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <span class="text-3xl mr-3">{{ getDeviceIcon(selectedDevice.type) }}</span>
+                            <div>
+                                <h3 class="text-xl font-semibold">{{ selectedDevice.name }}</h3>
+                                <p class="text-sm text-gray-500">{{ selectedDevice.id }}</p>
+                            </div>
+                        </div>
+                        <button @click="selectedDevice = null" class="text-gray-400 hover:text-gray-600">✕</button>
+                    </div>
+
+                    <div v-if="selectedDevice.type === 'smart_light'" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="text-sm text-gray-500 mb-1">光照强度</div>
+                                <div class="text-2xl font-bold text-blue-500">{{ selectedDevice.metadata?.lux || 0 }} lux</div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="text-sm text-gray-500 mb-1">信号强度</div>
+                                <div class="text-2xl font-bold text-green-500">{{ selectedDevice.metadata?.rssi || 0 }} dBm</div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="text-sm text-gray-500 mb-1">人体感应</div>
+                                <div :class="['text-2xl font-bold', selectedDevice.metadata?.presence ? 'text-red-500' : 'text-gray-400']">{{ selectedDevice.metadata?.presence ? '检测到' : '无' }}</div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="text-sm text-gray-500 mb-1">运行时长</div>
+                                <div class="text-2xl font-bold text-purple-500">{{ formatUptime(selectedDevice.metadata?.uptime || 0) }}</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 mb-4">
+                            <button @click="sendCommand('ON')" class="py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">🔆 开灯</button>
+                            <button @click="sendCommand('OFF')" class="py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">🌙 关灯</button>
+                            <button @click="sendCommand('AUTO')" class="py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">🤖 自动</button>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-gray-600">光照阈值</span>
+                                <span class="text-sm font-medium">{{ threshold }} lux</span>
+                            </div>
+                            <input type="range" v-model="threshold" min="10" max="500" step="10" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <button @click="setThreshold" class="mt-2 w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition">设置阈值</button>
+                        </div>
+                    </div>
+
+                    <div v-else class="space-y-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-500">设备状态</div>
+                            <div :class="['text-xl font-bold', selectedDevice.status === 'online' ? 'text-green-500' : 'text-red-500']">{{ selectedDevice.status === 'online' ? '在线' : '离线' }}</div>
+                        </div>
+
+                        <div v-if="selectedDevice.metadata && Object.keys(selectedDevice.metadata).length > 0">
+                            <h4 class="font-medium text-gray-700 mb-2">设备信息</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div v-for="(value, key) in selectedDevice.metadata" :key="key" class="bg-gray-50 rounded-lg p-2">
+                                    <div class="text-xs text-gray-500">{{ key }}</div>
+                                    <div class="text-sm font-medium">{{ value }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium text-gray-700 mb-2">发送命令</h4>
+                            <div class="flex gap-2">
+                                <input v-model="customCommand" type="text" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg" placeholder="输入命令">
+                                <button @click="sendCustomCommand" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">发送</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button @click="deleteDevice(selectedDevice.id)" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition">删除设备</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    loggedIn: false,
+                    showRegister: false,
+                    loginUsername: '',
+                    loginPassword: '',
+                    registerUsername: '',
+                    registerPassword: '',
+                    error: '',
+                    activeTab: 'devices',
+                    devices: [],
+                    deviceTypes: [],
+                    stats: { total: 0, online: 0, offline: 0 },
+                    selectedDevice: null,
+                    threshold: 100,
+                    customCommand: '',
+                    newDevice: { id: '', name: '', type: '', note: '' },
+                    newType: { type_id: '', name: '', icon: '📦', description: '', commands: '' },
+                    settingsForm: { oldUsername: '', newUsername: '', password: '' },
+                    passwordForm: { username: '', oldPassword: '', newPassword: '', confirmPassword: '' },
+                    settingsError: '',
+                    settingsSuccess: '',
+                    passwordError: '',
+                    passwordSuccess: '',
+                    ws: null,
+                    token: '',
+                    currentUsername: ''
+                }
+            },
+            mounted() {
+                this.loadDeviceTypes()
+            },
+            methods: {
+                async login() {
+                    const res = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: this.loginUsername, password: this.loginPassword })
+                    })
+                    const data = await res.json()
+                    if (res.ok) {
+                        this.token = data.token
+                        this.currentUsername = data.user.username
+                        this.settingsForm.oldUsername = data.user.username
+                        this.passwordForm.username = data.user.username
+                        this.loggedIn = true
+                        this.loadDevices()
+                        this.loadStats()
+                        this.connectWebSocket()
+                    } else {
+                        this.error = data.error
+                    }
+                },
+                async register() {
+                    const res = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: this.registerUsername, password: this.registerPassword })
+                    })
+                    const data = await res.json()
+                    if (res.ok) {
+                        this.token = data.token
+                        this.currentUsername = data.user.username
+                        this.settingsForm.oldUsername = data.user.username
+                        this.passwordForm.username = data.user.username
+                        this.loggedIn = true
+                        this.loadDevices()
+                        this.loadStats()
+                        this.connectWebSocket()
+                    } else {
+                        this.error = data.error
+                    }
+                },
+                logout() {
+                    this.loggedIn = false
+                    this.token = ''
+                    this.currentUsername = ''
+                    if (this.ws) {
+                        this.ws.close()
+                    }
+                },
+                async loadDevices() {
+                    const res = await fetch('/api/devices', {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    })
+                    if (res.ok) {
+                        this.devices = await res.json()
+                    }
+                },
+                async loadDeviceTypes() {
+                    if (!this.loggedIn) return
+                    const res = await fetch('/api/device-types', {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    })
+                    if (res.ok) {
+                        this.deviceTypes = await res.json()
+                    }
+                },
+                async loadStats() {
+                    const res = await fetch('/api/devices/stats', {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    })
+                    if (res.ok) {
+                        this.stats = await res.json()
+                    }
+                },
+                selectDevice(device) {
+                    this.selectedDevice = device
+                    if (device.metadata?.threshold) {
+                        this.threshold = device.metadata.threshold
+                    }
+                },
+                async sendCommand(cmd) {
+                    const res = await fetch('/api/control/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                        body: JSON.stringify({ device_id: this.selectedDevice.id, command: cmd })
+                    })
+                    if (res.ok) {
+                        this.loadDevices()
+                    }
+                },
+                async sendCustomCommand() {
+                    if (!this.customCommand) return
+                    const res = await fetch('/api/control/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                        body: JSON.stringify({ device_id: this.selectedDevice.id, command: this.customCommand })
+                    })
+                    if (res.ok) {
+                        this.customCommand = ''
+                        this.loadDevices()
+                    }
+                },
+                async setThreshold() {
+                    const res = await fetch('/api/control/threshold', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                        body: JSON.stringify({ threshold: parseFloat(this.threshold) })
+                    })
+                    if (res.ok) {
+                        this.loadDevices()
+                    }
+                },
+                async deleteDevice(id) {
+                    if (!confirm('确定删除该设备？')) return
+                    const res = await fetch(`/api/devices/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    })
+                    if (res.ok) {
+                        this.selectedDevice = null
+                        this.loadDevices()
+                        this.loadStats()
+                    }
+                },
+                async addDevice() {
+                    const res = await fetch('/api/devices', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                        body: JSON.stringify({
+                            id: this.newDevice.id,
+                            name: this.newDevice.name,
+                            type: this.newDevice.type,
+                            metadata: this.newDevice.note ? { note: this.newDevice.note } : {}
+                        })
+                    })
+                    if (res.ok) {
+                        this.newDevice = { id: '', name: '', type: '', note: '' }
+                        this.loadDevices()
+                        this.loadStats()
+                    }
+                },
+                async addDeviceType() {
+                    const cmds = this.newType.commands ? this.newType.commands.split(',').map(c => c.trim()) : []
+                    const res = await fetch('/api/device-types', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                        body: JSON.stringify({
+                            type_id: this.newType.type_id,
+                            name: this.newType.name,
+                            description: this.newType.description,
+                            icon: this.newType.icon,
+                            commands: cmds
+                        })
+                    })
+                    if (res.ok) {
+                        this.newType = { type_id: '', name: '', icon: '📦', description: '', commands: '' }
+                        this.loadDeviceTypes()
+                    }
+                },
+                async updateAccount() {
+                    this.settingsError = ''
+                    this.settingsSuccess = ''
+                    if (!this.settingsForm.newUsername || this.settingsForm.newUsername.length < 3) {
+                        this.settingsError = '用户名至少需要3个字符'
+                        return
+                    }
+                    if (!this.settingsForm.password) {
+                        this.settingsError = '请输入密码以确认'
+                        return
+                    }
+                    const res = await fetch('/api/auth/update-account', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                        body: JSON.stringify({
+                            old_username: this.settingsForm.oldUsername,
+                            new_username: this.settingsForm.newUsername,
+                            password: this.settingsForm.password
+                        })
+                    })
+                    const data = await res.json()
+                    if (res.ok) {
+                        this.settingsSuccess = '账户名修改成功！'
+                        this.currentUsername = data.username
+                        this.settingsForm.oldUsername = data.username
+                        this.passwordForm.username = data.username
+                        this.settingsForm.password = ''
+                    } else {
+                        this.settingsError = data.error
+                    }
+                },
+                async updatePassword() {
+                    this.passwordError = ''
+                    this.passwordSuccess = ''
+                    if (!this.passwordForm.oldPassword) {
+                        this.passwordError = '请输入当前密码'
+                        return
+                    }
+                    if (!this.passwordForm.newPassword || this.passwordForm.newPassword.length < 6) {
+                        this.passwordError = '新密码至少需要6个字符'
+                        return
+                    }
+                    if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
+                        this.passwordError = '两次输入的新密码不一致'
+                        return
+                    }
+                    const res = await fetch('/api/auth/update-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                        body: JSON.stringify({
+                            username: this.passwordForm.username,
+                            old_password: this.passwordForm.oldPassword,
+                            new_password: this.passwordForm.newPassword
+                        })
+                    })
+                    const data = await res.json()
+                    if (res.ok) {
+                        this.passwordSuccess = '密码修改成功！'
+                        this.passwordForm.oldPassword = ''
+                        this.passwordForm.newPassword = ''
+                        this.passwordForm.confirmPassword = ''
+                    } else {
+                        this.passwordError = data.error
+                    }
+                },
+                connectWebSocket() {
+                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+                    this.ws = new WebSocket(`${protocol}//${window.location.host}/api/ws?token=${this.token}`)
+                    this.ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data)
+                        if (data.topic && data.topic.includes('status')) {
+                            this.loadDevices()
+                            this.loadStats()
+                        }
+                    }
+                },
+                getDeviceIcon(type) {
+                    const dt = this.deviceTypes.find(t => t.type_id === type)
+                    return dt?.icon || '📦'
+                },
+                getDeviceTypeName(type) {
+                    const dt = this.deviceTypes.find(t => t.type_id === type)
+                    return dt?.name || type
+                },
+                formatUptime(seconds) {
+                    const hours = Math.floor(seconds / 3600)
+                    const mins = Math.floor((seconds % 3600) / 60)
+                    return `${hours}h ${mins}m`
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>

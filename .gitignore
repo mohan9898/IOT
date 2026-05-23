@@ -1,0 +1,65 @@
+# ==========================================
+# IoT Manager - Git Ignore File
+# ==========================================
+
+# Environment variables (contain secrets!)
+.env
+.env.local
+.env.*.local
+
+# Build output
+backend/iot-manager
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go
+*.test
+*.out
+backend/.idea/
+backend/.vscode/
+go.work
+go.work.sum
+
+# Node
+frontend/node_modules/
+frontend/.npm
+frontend/.cache/
+
+# Database files (can contain sensitive data)
+backend/data/
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Docker
+*.dockerignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+coverage.txt
+coverage.html
+*.coverage
+
+# Temporary test files
+backend/app.log
+backend/test.sh
