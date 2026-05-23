@@ -1,21 +1,22 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.21-bookworm AS builder
 
-RUN apk add --no-cache gcc musl-dev git sqlite-dev
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
 COPY backend/ ./
 
-RUN go env && echo "---" && ls -la
+RUN go env && echo "---files---" && ls -la && echo "---download---"
 
 RUN go mod download && go mod verify
 
-RUN CGO_ENABLED=1 GOOS=linux go build -mod=mod -v -o iot-manager .
+RUN echo "---build---" && CGO_ENABLED=1 GOOS=linux go build -v -o iot-manager .
 
-FROM alpine:3.19
+FROM debian:bookworm-slim
 
-RUN apk add --no-cache ca-certificates sqlite-libs curl && \
-    addgroup -g 1000 iot && adduser -D -u 1000 -G iot -h /app iot
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libsqlite3-0 curl && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -g 1000 iot && useradd -u 1000 -g iot -d /app -s /usr/sbin/nologin iot
 
 WORKDIR /app
 
