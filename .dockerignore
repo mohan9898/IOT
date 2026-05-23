@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+README.md
+LICENSE
+.dockerignore
+
+# 开发文件
+*.md
+*.txt
+.env
+.env.local
+.vscode
+.idea
+
+# 构建产物
+backend/iot-manager
+backend/data/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# 临时文件
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+deploy.sh
+check-status.sh
+cleanup.sh
+quickstart.sh
+
+# Node
+node_modules/
+
+# Go
+vendor/

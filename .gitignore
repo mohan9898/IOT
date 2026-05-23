@@ -47,7 +47,7 @@ data/
 Thumbs.db
 
 # Docker
-*.dockerignore
+
 
 # IDE
 .idea/
