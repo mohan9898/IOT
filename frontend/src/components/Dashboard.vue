@@ -89,10 +89,9 @@
           <p class="text-xs font-semibold text-gray-700 truncate" :title="mqttStatus.broker">{{ mqttStatus.broker || '-' }}</p>
         </div>
         <div class="p-2.5 bg-gray-50 rounded-xl">
-          <p class="text-xs text-gray-400 whitespace-nowrap">连接信息</p>
+          <p class="text-xs text-gray-400 whitespace-nowrap">连接类型</p>
           <p class="text-xs font-semibold text-gray-700 whitespace-nowrap">
-            {{ mqttStatus.protocol || '-' }}://{{ mqttStatus.port || '-' }}
-            {{ mqttStatus.tls_enabled ? '🔒' : '🔓' }}
+            {{ mqttStatus.connection_type || '-' }}
           </p>
         </div>
         <div class="p-2.5 bg-gray-50 rounded-xl">
@@ -215,6 +214,7 @@ const mqttStatus = reactive({
   port: 0,
   protocol: '',
   tls_enabled: false,
+  connection_type: '',
   subscriptions: [],
 })
 

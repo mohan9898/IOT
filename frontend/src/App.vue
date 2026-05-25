@@ -105,7 +105,7 @@
               <button
                 @click="activeTab = 'dashboard'"
                 class="px-2 py-2 rounded-lg font-medium transition-all text-xs bg-gray-100 hover:bg-gray-200"
-                :title="mqttIndicator.connected ? 'MQTT 已连接' : 'MQTT 已断开'"
+                :title="'MQTT ' + mqttIndicator.connection_type + (mqttIndicator.connected ? ' 已连接' : ' 已断开')"
               >
                 <span class="flex items-center gap-1">
                   <span
@@ -220,6 +220,7 @@ const showWelcome = ref(false)
 
 const mqttIndicator = reactive({
   connected: false,
+  connection_type: '',
 })
 
 let mqttTimer = null
@@ -229,6 +230,7 @@ function checkMQTTStatus() {
   store.api.getMQTTStatus().then(data => {
     if (data) {
       mqttIndicator.connected = data.connected
+      mqttIndicator.connection_type = data.connection_type || ''
     }
   }).catch(() => {
     mqttIndicator.connected = false

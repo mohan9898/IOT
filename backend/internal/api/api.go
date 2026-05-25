@@ -771,13 +771,14 @@ func (h *Handler) GetMQTTStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"connected":     status.Connected || clientActive,
-		"broker":        status.Broker,
-		"port":          status.Port,
-		"protocol":      status.Protocol,
-		"tls_enabled":   status.TLSEnabled,
-		"connected_at":  status.ConnectedAt,
-		"subscriptions": subscriptions,
+		"connected":       status.Connected || clientActive,
+		"broker":          status.Broker,
+		"port":            status.Port,
+		"protocol":        status.Protocol,
+		"tls_enabled":     status.TLSEnabled,
+		"connected_at":    status.ConnectedAt,
+		"connection_type": connectionTypeName(status.Protocol),
+		"subscriptions":   subscriptions,
 	})
 }
 
@@ -1135,6 +1136,21 @@ func (h *Handler) CORSMiddleware() gin.HandlerFunc {
 		}
 
 		c.Next()
+	}
+}
+
+func connectionTypeName(protocol string) string {
+	switch protocol {
+	case "wss":
+		return "MQTT WebSocket (TLS)"
+	case "ws":
+		return "MQTT WebSocket"
+	case "ssl", "tls":
+		return "MQTT TCP (TLS)"
+	case "tcp":
+		return "MQTT TCP"
+	default:
+		return "MQTT " + protocol
 	}
 }
 
