@@ -3,8 +3,8 @@
     <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md transform transition-all">
       <div class="text-center mb-8">
         <div class="text-5xl mb-4">🔌</div>
-        <h1 class="text-3xl font-bold text-gray-800">IoT 设备管理系统</h1>
-        <p class="text-gray-500 mt-2">管理您的智能设备</p>
+        <h1 class="text-3xl font-bold text-gray-800">元枢智能物联系统</h1>
+        <p class="text-gray-500 mt-2">太一语音助手 · 智能物联</p>
       </div>
 
       <!-- 登录表单 -->

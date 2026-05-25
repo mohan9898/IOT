@@ -14,8 +14,8 @@
         <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
           <div class="text-center mb-6">
             <p class="text-6xl mb-4">👋</p>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">欢迎使用 IoT 设备管理器</h2>
-            <p class="text-gray-500">快速上手，轻松管理您的智能设备</p>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">欢迎使用元枢智能物联系统</h2>
+            <p class="text-gray-500">太一语音助手加持，轻松管理智能设备</p>
           </div>
           <div class="space-y-3 mb-6">
             <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl">
@@ -64,8 +64,8 @@
             <!-- Logo -->
             <div class="flex items-center">
               <span class="text-3xl mr-3">🔌</span>
-              <span class="text-lg sm:text-xl font-bold text-gray-800 hidden sm:inline">IoT 设备管理</span>
-              <span class="text-lg font-bold text-gray-800 sm:hidden">IoT</span>
+              <span class="text-lg sm:text-xl font-bold text-gray-800 hidden sm:inline">元枢物联【mtrk】</span>
+              <span class="text-lg font-bold text-gray-800 sm:hidden">mtrk</span>
             </div>
             
             <!-- 桌面端导航 -->

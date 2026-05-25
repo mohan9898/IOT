@@ -1,10 +1,10 @@
 
 #!/bin/bash
-# IoT Manager - Quick Deploy Script
+# 元枢智能物联系统【mtrk】 - 快速部署脚本
 set -e
 
 echo "=========================================="
-echo "  🚀 IoT Manager Quick Deploy"
+echo "  🚀 元枢智能物联系统 快速部署"
 echo "=========================================="
 echo ""
 
@@ -56,7 +56,7 @@ echo "=========================================="
 echo "  ✅ Deployment complete!"
 echo "=========================================="
 echo ""
-echo "📡 Access IoT Manager at: http://localhost:6116"
+echo "📡 访问元枢智能物联系统: http://localhost:6116"
 echo ""
 echo "📝 View logs: $COMPOSE_CMD logs -f"
 echo "🔄 Update: $COMPOSE_CMD pull && $COMPOSE_CMD up -d"
