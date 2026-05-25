@@ -301,7 +301,7 @@ docker compose down
 docker compose pull && docker compose up -d
 
 # 查看镜像信息
-docker images ghcr.io/mohan9898/iot
+docker images ghcr.nju.edu.cn/mohan9898/iot
 ```
 
 ### 数据持久化

@@ -27,7 +27,7 @@ services:
   iot-manager:
     # Docker 镜像地址（GitHub Container Registry）
     # 每次推送代码到 main 分支时自动构建更新
-    image: ghcr.io/mohan9898/iot:latest
+    image: ghcr.nju.edu.cn/mohan9898/iot:latest
 
     # 容器名称（方便 docker logs iot-manager 等命令直接使用）
     container_name: iot-manager
