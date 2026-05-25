@@ -762,6 +762,8 @@ func (h *Handler) GetMQTTStatus(c *gin.Context) {
 			"+/status",
 			"+/control",
 			"+/metric",
+			"$SYS/brokers/+/clients/+/connected",
+			"$SYS/brokers/+/clients/+/disconnected",
 		}
 		if h.mqtt.IsConnected() {
 			status.Connected = true
@@ -916,11 +918,45 @@ func (h *Handler) HandleMQTTMessage(msg mqtt.Message) {
 
 	topic := msg.Topic()
 	metrics.RecordMQTTMessage(topic, "received")
-	
+
+	if strings.HasPrefix(topic, "$SYS/brokers/") {
+		h.handleSysMessage(topic, msg.Payload())
+		return
+	}
+
 	if strings.HasPrefix(topic, "smart_light/") {
 		h.handleSmartLightMessage(topic, msg.Payload())
 	} else {
 		h.handleGenericDeviceMessage(topic, msg.Payload())
+	}
+}
+
+func (h *Handler) handleSysMessage(topic string, payload []byte) {
+	parts := strings.Split(topic, "/")
+	if len(parts) != 6 {
+		return
+	}
+
+	clientID := parts[4]
+	event := parts[5]
+
+	switch event {
+	case "connected":
+		device, err := h.db.GetDevice(clientID)
+		if err == nil && device != nil && device.ID != "" {
+			h.db.UpdateDeviceStatus(device.ID, "online")
+			h.logger.Info("Device connected via $SYS",
+				zap.String("device_id", clientID),
+			)
+		}
+	case "disconnected":
+		device, err := h.db.GetDevice(clientID)
+		if err == nil && device != nil && device.ID != "" {
+			h.db.UpdateDeviceStatus(device.ID, "offline")
+			h.logger.Info("Device disconnected via $SYS",
+				zap.String("device_id", clientID),
+			)
+		}
 	}
 }
 

@@ -89,6 +89,8 @@ func main() {
 			"+/status",
 			"+/control",
 			"+/metric",
+			"$SYS/brokers/+/clients/+/connected",
+			"$SYS/brokers/+/clients/+/disconnected",
 		}
 
 		for _, topic := range topics {
@@ -122,7 +124,7 @@ func main() {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
-			count, err := database.MarkOfflineDevices(2)
+			count, err := database.MarkOfflineDevices(5)
 			if err != nil {
 				logger.Warn("Failed to mark offline devices", zap.Error(err))
 			} else if count > 0 {
