@@ -187,6 +187,7 @@
           <Dashboard v-if="activeTab === 'dashboard'" key="dashboard" @navigate="activeTab = $event" />
           <DeviceList v-else-if="activeTab === 'devices'" key="devices" />
           <AddDevice v-else-if="activeTab === 'add'" key="add" />
+          <CommandRecords v-else-if="activeTab === 'records'" key="records" />
           <DeviceTypeManager v-else-if="activeTab === 'types'" key="types" />
           <AccountSettings v-else-if="activeTab === 'settings'" key="settings" />
         </transition>
@@ -211,6 +212,7 @@ import AddDevice from './components/AddDevice.vue'
 import DeviceTypeManager from './components/DeviceTypeManager.vue'
 import AccountSettings from './components/AccountSettings.vue'
 import DeviceDetailModal from './components/DeviceDetailModal.vue'
+import CommandRecords from './components/CommandRecords.vue'
 
 const activeTab = ref('dashboard')
 const mobileMenuOpen = ref(false)
@@ -246,6 +248,7 @@ const tabs = computed(() => [
   { id: 'dashboard', label: '仪表盘', icon: '📊' },
   { id: 'devices', label: '设备列表', icon: '📱' },
   { id: 'add', label: '添加设备', icon: '➕' },
+  { id: 'records', label: '控制记录', icon: '📋' },
   { id: 'types', label: '设备类型', icon: '📦' },
   { id: 'settings', label: '账户设置', icon: '⚙️' },
 ])

@@ -87,6 +87,9 @@ func (h *Handler) SetupRoutes(r *gin.Engine) {
 		api.POST("/control/threshold", h.SetThreshold)
 		api.GET("/control/history/:device_id", h.GetCommandHistory)
 
+		api.GET("/control/records", h.GetControlRecords)
+		api.GET("/control/stats", h.GetControlStats)
+
 		api.GET("/ws", h.WebSocketHandler)
 
 		api.GET("/dashboard", h.GetDashboard)
@@ -679,6 +682,40 @@ func (h *Handler) GetCommandHistory(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, commands)
+}
+
+func (h *Handler) GetControlRecords(c *gin.Context) {
+	deviceID := c.Query("device_id")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	if page < 1 { page = 1 }
+	if pageSize < 1 { pageSize = 20 }
+	if pageSize > 100 { pageSize = 100 }
+
+	commands, total, err := h.db.GetAllCommands(deviceID, page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if commands == nil { commands = []*db.Command{} }
+
+	totalPages := (total + pageSize - 1) / pageSize
+	c.JSON(http.StatusOK, gin.H{
+		"records":     commands,
+		"total":       total,
+		"page":        page,
+		"page_size":   pageSize,
+		"total_pages": totalPages,
+	})
+}
+
+func (h *Handler) GetControlStats(c *gin.Context) {
+	stats, err := h.db.GetCommandStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, stats)
 }
 
 func (h *Handler) GetMQTTStatus(c *gin.Context) {

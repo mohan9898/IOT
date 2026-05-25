@@ -132,6 +132,16 @@ class ApiService {
       body: JSON.stringify({ threshold: parseFloat(threshold) }),
     })
   }
+
+  async getControlRecords(deviceId, page = 1, pageSize = 20) {
+    const params = new URLSearchParams({ page, page_size: pageSize })
+    if (deviceId) params.set('device_id', deviceId)
+    return this.request(`/control/records?${params}`)
+  }
+
+  async getControlStats() {
+    return this.request('/control/stats')
+  }
 }
 
 export default new ApiService()

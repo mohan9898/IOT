@@ -310,6 +310,74 @@ func (s *SQLite) UpdateCommandStatus(id int64, status, response string) error {
 	return err
 }
 
+func (s *SQLite) GetAllCommands(deviceID string, page, pageSize int) ([]*Command, int, error) {
+	where := ""
+	args := []interface{}{}
+	if deviceID != "" {
+		where = "WHERE device_id = ?"
+		args = append(args, deviceID)
+	}
+
+	var total int
+	countQuery := "SELECT COUNT(*) FROM commands " + where
+	s.db.QueryRow(countQuery, args...).Scan(&total)
+
+	offset := (page - 1) * pageSize
+	query := "SELECT id, device_id, command, parameters, status, sent_at, executed_at, response FROM commands " + where + " ORDER BY sent_at DESC LIMIT ? OFFSET ?"
+	args = append(args, pageSize, offset)
+
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var cmds []*Command
+	for rows.Next() {
+		c := &Command{}
+		var paramsStr string
+		rows.Scan(&c.ID, &c.DeviceID, &c.Command, &paramsStr, &c.Status, &c.SentAt, &c.ExecutedAt, &c.Response)
+		json.Unmarshal([]byte(paramsStr), &c.Parameters)
+		cmds = append(cmds, c)
+	}
+	return cmds, total, nil
+}
+
+func (s *SQLite) GetCommandStats() (map[string]interface{}, error) {
+	stats := map[string]interface{}{}
+
+	var totalCount int
+	s.db.QueryRow("SELECT COUNT(*) FROM commands").Scan(&totalCount)
+	stats["total"] = totalCount
+
+	var todayCount int
+	s.db.QueryRow("SELECT COUNT(*) FROM commands WHERE date(sent_at) = date('now')").Scan(&todayCount)
+	stats["today"] = todayCount
+
+	rows, err := s.db.Query("SELECT device_id, COUNT(*) as cnt FROM commands GROUP BY device_id ORDER BY cnt DESC LIMIT 10")
+	if err == nil {
+		defer rows.Close()
+		byDevice := []map[string]interface{}{}
+		for rows.Next() {
+			var did string
+			var cnt int
+			rows.Scan(&did, &cnt)
+			byDevice = append(byDevice, map[string]interface{}{"device_id": did, "count": cnt})
+		}
+		stats["by_device"] = byDevice
+	}
+
+	var successCount int
+	s.db.QueryRow("SELECT COUNT(*) FROM commands WHERE status = 'success'").Scan(&successCount)
+	stats["success"] = successCount
+
+	var failedCount int
+	s.db.QueryRow("SELECT COUNT(*) FROM commands WHERE status = 'failed'").Scan(&failedCount)
+	stats["failed"] = failedCount
+
+	return stats, nil
+}
+
 func (s *SQLite) CreateMetric(deviceID, name string, value float64) error {
 	_, err := s.db.Exec("INSERT INTO metrics (device_id, name, value) VALUES (?, ?, ?)", deviceID, name, value)
 	return err
