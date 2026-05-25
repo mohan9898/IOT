@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"sync"
@@ -70,7 +69,7 @@ func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
 	}
 
 	opts.OnConnect = func(c mqttlib.Client) {
-		log.Println("MQTT connected:", addr)
+		fmt.Printf("[MQTT] 已连接: %s (KeepAlive=%ds)\n", addr, 60)
 		metrics.SetMQTTConnected(true)
 		statusMu.Lock()
 		currentStatus.Connected = true
@@ -79,7 +78,7 @@ func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
 	}
 
 	opts.OnConnectionLost = func(c mqttlib.Client, err error) {
-		log.Println("MQTT connection lost:", err)
+		fmt.Printf("[MQTT] 连接断开: %v (客户端状态=%v)\n", err, c.IsConnected())
 		metrics.SetMQTTConnected(false)
 		statusMu.Lock()
 		currentStatus.Connected = false
@@ -87,7 +86,7 @@ func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
 	}
 
 	opts.OnReconnecting = func(c mqttlib.Client, opts *mqttlib.ClientOptions) {
-		log.Println("MQTT reconnecting...")
+		fmt.Println("[MQTT] 正在重连...")
 	}
 
 	client := mqttlib.NewClient(opts)
@@ -109,7 +108,8 @@ func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
 
 func setupTLS(cfg *config.MQTTConfig) (*tls.Config, error) {
 	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12,
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: cfg.CACertPath == "",
 	}
 
 	if cfg.CACertPath != "" {

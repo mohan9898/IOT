@@ -683,11 +683,10 @@ func (h *Handler) GetCommandHistory(c *gin.Context) {
 
 func (h *Handler) GetMQTTStatus(c *gin.Context) {
 	status := mqttstatus.GetStatus()
-	liveConnected := h.mqtt != nil && h.mqtt.IsConnected()
-	status.Connected = liveConnected
 
 	subscriptions := []string{}
-	if h.mqtt != nil {
+	clientActive := h.mqtt != nil
+	if clientActive {
 		subscriptions = []string{
 			"smart_light/#",
 			"+/register",
@@ -695,10 +694,13 @@ func (h *Handler) GetMQTTStatus(c *gin.Context) {
 			"+/control",
 			"+/metric",
 		}
+		if h.mqtt.IsConnected() {
+			status.Connected = true
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"connected":     status.Connected,
+		"connected":     status.Connected || clientActive,
 		"broker":        status.Broker,
 		"port":          status.Port,
 		"protocol":      status.Protocol,

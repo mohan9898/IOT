@@ -75,8 +75,8 @@ func Load() *Config {
 			Port: 8883,                                      // TLS/SSL 端口
 			Path: "/mqtt",                                     // WebSocket 路径
 			ClientIDPrefix: "iot-manager-",                            // 客户端 ID 前缀
-			Username: "",                                     // MQTT 用户名（通过环境变量配置）
-			Password: "",                                     // MQTT 密码（通过环境变量配置）
+			Username: "taiyi",                        // MQTT 用户名（通过环境变量配置）
+Password: "p9UPpz2i.H48stE",             // MQTT 密码（通过环境变量配置）
 			TLSEnabled: true,                                     // 启用 TLS 加密连接
 			CACertPath: "",                                        // CA 证书路径（使用系统根证书）
 		},
