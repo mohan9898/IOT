@@ -55,10 +55,10 @@ services:
       # ===== MQTT 连接配置 =====
       # MQTT Broker 地址（默认使用 EMQX 公共测试服务器）
       - MQTT_BROKER=${MQTT_BROKER:-d11aab19.ala.cn-hangzhou.emqxsl.cn}
-      # MQTT 端口：8883(TLS加密) / 1883(普通TCP)
-      - MQTT_PORT=${MQTT_PORT:-8883}
-      # 连接协议：ssl / tcp / ws / wss
-      - MQTT_PROTOCOL=${MQTT_PROTOCOL:-ssl}
+      # MQTT 端口：8040(WSS加密) / 8883(TLS加密)
+      - MQTT_PORT=${MQTT_PORT:-8040}
+      # 连接协议：wss / ssl / tcp / ws
+      - MQTT_PROTOCOL=${MQTT_PROTOCOL:-wss}
       # MQTT 认证用户名（Broker 要求时填写）
       - MQTT_USERNAME=${MQTT_USERNAME}
       # MQTT 认证密码（Broker 要求时填写）

@@ -4,6 +4,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/joho/godotenv"
 )
 
 // Config 是整个 IoT 管理系统的主配置结构体
@@ -59,6 +61,8 @@ type JWTConfig struct {
 // 首先使用默认值初始化配置，然后可以通过环境变量覆盖部分配置
 // 返回值：指向完整配置对象的指针
 func Load() *Config {
+	_ = godotenv.Load()
+
 	// 初始化默认配置
 	cfg := &Config{
 		Server: ServerConfig{
