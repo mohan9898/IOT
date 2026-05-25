@@ -58,71 +58,71 @@
       </div>
 
       <!-- 顶部导航栏 -->
-      <nav class="bg-white shadow-lg sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center h-16">
+      <nav class="bg-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div class="flex justify-between items-center h-14">
             <!-- Logo -->
-            <div class="flex items-center">
-              <span class="text-3xl mr-3">🔌</span>
-              <span class="text-lg sm:text-xl font-bold text-gray-800 hidden sm:inline">元枢物联【mtrk】</span>
-              <span class="text-lg font-bold text-gray-800 sm:hidden">mtrk</span>
+            <div class="flex items-center flex-shrink-0">
+              <span class="text-2xl mr-2">🔌</span>
+              <span class="text-base sm:text-lg font-bold text-gray-800 hidden sm:inline whitespace-nowrap">元枢物联【mtrk】</span>
+              <span class="text-base font-bold text-gray-800 sm:hidden">mtrk</span>
             </div>
             
             <!-- 桌面端导航 -->
-            <div class="hidden md:flex items-center space-x-1">
+            <div class="hidden md:flex items-center gap-0.5">
               <button
                 v-for="tab in tabs"
                 :key="tab.id"
                 @click="activeTab = tab.id"
                 :class="[
-                  'px-3 lg:px-5 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm lg:text-base',
+                  'px-2 lg:px-3 py-2 rounded-lg font-medium transition-all duration-200 text-xs lg:text-sm whitespace-nowrap',
                   activeTab === tab.id
-                    ? 'bg-blue-500 text-white shadow-md'
+                    ? 'bg-blue-500 text-white shadow'
                     : 'text-gray-600 hover:bg-gray-100'
                 ]"
               >
-                <span class="mr-1 lg:mr-2">{{ tab.icon }}</span>
+                <span class="mr-0.5 lg:mr-1">{{ tab.icon }}</span>
                 {{ tab.label }}
               </button>
               
-              <div class="w-px h-8 bg-gray-200 mx-2"></div>
+              <div class="w-px h-6 bg-gray-200 mx-1"></div>
               
               <!-- 通知开关 -->
               <button
                 @click="toggleNotifications"
                 :class="[
-                  'px-3 py-2.5 rounded-xl font-medium transition-all text-sm',
+                  'px-2 py-2 rounded-lg font-medium transition-all text-xs',
                   store.notificationsEnabled
                     ? 'bg-green-100 text-green-700 hover:bg-green-200'
                     : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                 ]"
                 :title="store.notificationsEnabled ? '通知已开启' : '通知已关闭'"
               >
-                <span class="text-lg">{{ store.notificationsEnabled ? '🔔' : '🔕' }}</span>
+                <span class="text-base">{{ store.notificationsEnabled ? '🔔' : '🔕' }}</span>
               </button>
 
               <!-- MQTT 状态指示器 -->
               <button
                 @click="activeTab = 'dashboard'"
-                class="px-3 py-2.5 rounded-xl font-medium transition-all text-sm bg-gray-100 hover:bg-gray-200"
+                class="px-2 py-2 rounded-lg font-medium transition-all text-xs bg-gray-100 hover:bg-gray-200"
                 :title="mqttIndicator.connected ? 'MQTT 已连接' : 'MQTT 已断开'"
               >
-                <span class="flex items-center gap-1.5">
+                <span class="flex items-center gap-1">
                   <span
-                    :class="['w-2.5 h-2.5 rounded-full flex-shrink-0', mqttIndicator.connected ? 'bg-green-500 animate-pulse' : 'bg-red-500']"
+                    :class="['w-2 h-2 rounded-full flex-shrink-0', mqttIndicator.connected ? 'bg-green-500 animate-pulse' : 'bg-red-500']"
                   ></span>
-                  <span class="text-xs text-gray-500 hidden lg:inline">MQTT</span>
+                  <span class="text-xs text-gray-500 hidden lg:inline whitespace-nowrap">MQTT</span>
                 </span>
               </button>
               
-              <div class="flex items-center mr-2 mt-0">
-                <span class="text-gray-500 mr-1">👤</span>
-                <span class="text-gray-700 font-medium text-sm">{{ store.currentUsername }}</span>
+              <div class="flex items-center flex-shrink-0">
+                <span class="text-gray-400 mr-1">👤</span>
+                <span class="text-gray-700 font-medium text-xs whitespace-nowrap max-w-[80px] truncate">{{ store.currentUsername }}</span>
               </div>
               
               <button
                 @click="logout"
-                class="px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-xl font-medium text-sm transition-colors"
+                class="px-2 py-2 text-red-500 hover:bg-red-50 rounded-lg font-medium text-xs transition-colors whitespace-nowrap"
               >
                 退出
               </button>

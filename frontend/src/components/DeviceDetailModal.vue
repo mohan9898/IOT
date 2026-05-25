@@ -2,13 +2,13 @@
   <div v-if="device" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="close">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <!-- 头部 -->
-      <div class="p-6 border-b border-gray-100">
+      <div class="p-5 border-b border-gray-100">
         <div class="flex justify-between items-start">
-          <div class="flex items-center">
-            <span class="text-5xl mr-4">{{ icon }}</span>
-            <div>
-              <h2 class="text-2xl font-bold text-gray-800">{{ device.name }}</h2>
-              <p class="text-sm text-gray-500 font-mono">{{ device.id }}</p>
+          <div class="flex items-center min-w-0">
+            <span class="text-4xl mr-3 flex-shrink-0">{{ icon }}</span>
+            <div class="min-w-0">
+              <h2 class="text-xl font-bold text-gray-800 truncate">{{ device.name }}</h2>
+              <p class="text-xs text-gray-500 font-mono truncate">{{ device.id }}</p>
             </div>
           </div>
           <button @click="close" class="text-gray-400 hover:text-gray-600 text-2xl p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -23,36 +23,32 @@
         <div v-if="device.type === 'smart_light'" class="space-y-6">
           <!-- 当前工作状态 -->
           <div class="grid grid-cols-2 gap-4">
-            <div :class="['rounded-xl p-5 text-center border-2 transition-all', lightOn ? 'bg-green-50 border-green-400' : 'bg-gray-100 border-gray-300']">
-              <div class="text-sm font-medium mb-1" :class="lightOn ? 'text-green-600' : 'text-gray-500'">灯光</div>
-              <div class="text-3xl">{{ lightOn ? '🔆' : '🌙' }}</div>
-              <div class="text-lg font-bold mt-1" :class="lightOn ? 'text-green-700' : 'text-gray-400'">{{ lightOn ? '已开启' : '已关闭' }}</div>
+            <div :class="['rounded-xl p-4 text-center border-2 transition-all', lightOn ? 'bg-green-50 border-green-400' : 'bg-gray-100 border-gray-300']">
+              <div class="text-xs font-medium mb-1 whitespace-nowrap" :class="lightOn ? 'text-green-600' : 'text-gray-500'">灯光</div>
+              <div class="text-2xl">{{ lightOn ? '🔆' : '🌙' }}</div>
+              <div class="text-base font-bold mt-1 whitespace-nowrap" :class="lightOn ? 'text-green-700' : 'text-gray-400'">{{ lightOn ? '已开启' : '已关闭' }}</div>
             </div>
-            <div :class="['rounded-xl p-5 text-center border-2 transition-all', isAutoMode ? 'bg-blue-50 border-blue-400' : 'bg-orange-50 border-orange-400']">
-              <div class="text-sm font-medium mb-1" :class="isAutoMode ? 'text-blue-600' : 'text-orange-600'">模式</div>
-              <div class="text-3xl">{{ isAutoMode ? '🤖' : '✋' }}</div>
-              <div class="text-lg font-bold mt-1" :class="isAutoMode ? 'text-blue-700' : 'text-orange-700'">{{ isAutoMode ? '自动控制' : '手动控制' }}</div>
+            <div :class="['rounded-xl p-4 text-center border-2 transition-all', isAutoMode ? 'bg-blue-50 border-blue-400' : 'bg-orange-50 border-orange-400']">
+              <div class="text-xs font-medium mb-1 whitespace-nowrap" :class="isAutoMode ? 'text-blue-600' : 'text-orange-600'">模式</div>
+              <div class="text-2xl">{{ isAutoMode ? '🤖' : '✋' }}</div>
+              <div class="text-base font-bold mt-1 whitespace-nowrap" :class="isAutoMode ? 'text-blue-700' : 'text-orange-700'">{{ isAutoMode ? '自动控制' : '手动控制' }}</div>
             </div>
           </div>
           <!-- 传感器数据 -->
           <div class="grid grid-cols-2 gap-4">
-            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5">
-              <div class="text-sm text-blue-600 mb-1 font-medium">光照强度</div>
-              <div class="text-3xl font-bold text-blue-700">{{ device.metadata?.lux || 0 }} lux</div>
+            <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4">
+              <div class="text-xs text-yellow-600 mb-1 font-medium whitespace-nowrap">光照强度</div>
+              <div class="text-2xl font-bold text-yellow-700">{{ device.metadata?.lux || '0' }} <span class="text-xs font-normal">lux</span></div>
             </div>
-            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5">
-              <div class="text-sm text-green-600 mb-1 font-medium">信号强度</div>
-              <div class="text-3xl font-bold text-green-700">{{ device.metadata?.rssi || 0 }} dBm</div>
-            </div>
-            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5">
-              <div class="text-sm text-purple-600 mb-1 font-medium">人体感应</div>
-              <div :class="['text-3xl font-bold', device.metadata?.presence ? 'text-purple-700' : 'text-gray-400']">
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4">
+              <div class="text-xs text-purple-600 mb-1 font-medium whitespace-nowrap">人体感应</div>
+              <div :class="['text-2xl font-bold', device.metadata?.presence ? 'text-purple-700' : 'text-gray-400']">
                 {{ device.metadata?.presence ? '检测到' : '无' }}
               </div>
             </div>
-            <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5">
-              <div class="text-sm text-orange-600 mb-1 font-medium">运行时长</div>
-              <div class="text-3xl font-bold text-orange-700">{{ formatUptime(device.metadata?.uptime || 0) }}</div>
+            <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4">
+              <div class="text-xs text-orange-600 mb-1 font-medium whitespace-nowrap">运行时长</div>
+              <div class="text-2xl font-bold text-orange-700">{{ formatUptime(device.metadata?.uptime || 0) }}</div>
             </div>
           </div>
 

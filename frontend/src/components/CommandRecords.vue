@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-800">控制记录</h1>
+      <h1 class="text-xl sm:text-2xl font-bold text-gray-800 whitespace-nowrap">控制记录</h1>
       <button
         @click="loadRecords"
         :disabled="loading"
@@ -49,38 +49,38 @@
         <table v-if="records.length > 0" class="w-full">
           <thead>
             <tr class="bg-gray-50 text-left">
-              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">设备</th>
-              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">命令</th>
-              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">状态</th>
-              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase hidden sm:table-cell">参数</th>
-              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">发送时间</th>
-              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">响应</th>
+              <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">设备</th>
+              <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">命令</th>
+              <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">状态</th>
+              <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden sm:table-cell whitespace-nowrap">参数</th>
+              <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell whitespace-nowrap">发送时间</th>
+              <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell whitespace-nowrap">响应</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <tr v-for="rec in records" :key="rec.id" class="hover:bg-gray-50 transition-colors">
-              <td class="px-5 py-3.5">
-                <div class="font-medium text-gray-800 text-sm">{{ getDeviceName(rec.device_id) }}</div>
-                <div class="text-xs text-gray-400 font-mono">{{ rec.device_id }}</div>
+              <td class="px-4 py-3.5 max-w-[160px]">
+                <div class="font-medium text-gray-800 text-sm truncate">{{ getDeviceName(rec.device_id) }}</div>
+                <div class="text-xs text-gray-400 font-mono truncate">{{ rec.device_id }}</div>
               </td>
-              <td class="px-5 py-3.5">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold"
+              <td class="px-4 py-3.5">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap"
                   :class="commandClass(rec.command)"
                 >{{ rec.command }}</span>
               </td>
-              <td class="px-5 py-3.5">
-                <span :class="['inline-flex items-center gap-1 text-xs font-semibold', statusClass(rec.status)]">
+              <td class="px-4 py-3.5">
+                <span :class="['inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap', statusClass(rec.status)]">
                   <span :class="['w-2 h-2 rounded-full', statusDotClass(rec.status)]"></span>
                   {{ rec.status || 'pending' }}
                 </span>
               </td>
-              <td class="px-5 py-3.5 hidden sm:table-cell">
-                <span class="text-xs text-gray-500">{{ formatParams(rec.parameters) }}</span>
+              <td class="px-4 py-3.5 hidden sm:table-cell">
+                <span class="text-xs text-gray-500 whitespace-nowrap">{{ formatParams(rec.parameters) }}</span>
               </td>
-              <td class="px-5 py-3.5 hidden md:table-cell">
-                <span class="text-xs text-gray-500">{{ formatTime(rec.sent_at) }}</span>
+              <td class="px-4 py-3.5 hidden md:table-cell">
+                <span class="text-xs text-gray-500 whitespace-nowrap">{{ formatTime(rec.sent_at) }}</span>
               </td>
-              <td class="px-5 py-3.5 hidden md:table-cell">
+              <td class="px-4 py-3.5 hidden md:table-cell">
                 <span class="text-xs text-gray-400 max-w-[150px] truncate block">{{ rec.response || '-' }}</span>
               </td>
             </tr>

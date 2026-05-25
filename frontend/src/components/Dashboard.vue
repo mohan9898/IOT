@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-800">仪表盘</h1>
+      <h1 class="text-xl sm:text-2xl font-bold text-gray-800 whitespace-nowrap">仪表盘</h1>
       <button
         @click="refresh"
         :disabled="loading"
@@ -12,29 +12,29 @@
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-500 mb-1">设备总数</p>
+            <p class="text-xs text-gray-500 mb-0.5 whitespace-nowrap">设备总数</p>
             <p class="text-3xl font-bold text-gray-800">{{ dashboard.stats.total }}</p>
           </div>
-          <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+          <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
             📱
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-500 mb-1">在线设备</p>
+            <p class="text-xs text-gray-500 mb-0.5 whitespace-nowrap">在线设备</p>
             <p class="text-3xl font-bold text-green-600">{{ dashboard.stats.online }}</p>
           </div>
-          <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+          <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
             🟢
           </div>
         </div>
-        <div class="mt-3 w-full bg-gray-100 rounded-full h-1.5">
+        <div class="mt-2 w-full bg-gray-100 rounded-full h-1.5">
           <div
             class="bg-green-500 h-1.5 rounded-full transition-all duration-500"
             :style="{ width: percentage(dashboard.stats.online, dashboard.stats.total) + '%' }"
@@ -42,17 +42,17 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-500 mb-1">离线设备</p>
+            <p class="text-xs text-gray-500 mb-0.5 whitespace-nowrap">离线设备</p>
             <p class="text-3xl font-bold text-red-500">{{ dashboard.stats.offline }}</p>
           </div>
-          <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+          <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
             🔴
           </div>
         </div>
-        <div class="mt-3 w-full bg-gray-100 rounded-full h-1.5">
+        <div class="mt-2 w-full bg-gray-100 rounded-full h-1.5">
           <div
             class="bg-red-500 h-1.5 rounded-full transition-all duration-500"
             :style="{ width: percentage(dashboard.stats.offline, dashboard.stats.total) + '%' }"
@@ -72,32 +72,32 @@
           {{ mqttLoading ? '检测中...' : '刷新检测' }}
         </button>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl">
           <span
-            :class="['w-3 h-3 rounded-full flex-shrink-0', mqttStatus.connected ? 'bg-green-500 animate-pulse' : 'bg-red-500']"
+            :class="['w-2.5 h-2.5 rounded-full flex-shrink-0', mqttStatus.connected ? 'bg-green-500 animate-pulse' : 'bg-red-500']"
           ></span>
-          <div>
-            <p class="text-xs text-gray-400">连接状态</p>
-            <p :class="['text-sm font-semibold', mqttStatus.connected ? 'text-green-600' : 'text-red-500']">
+          <div class="min-w-0">
+            <p class="text-xs text-gray-400 whitespace-nowrap">连接状态</p>
+            <p :class="['text-xs font-semibold whitespace-nowrap', mqttStatus.connected ? 'text-green-600' : 'text-red-500']">
               {{ mqttStatus.connected ? '已连接' : '已断开' }}
             </p>
           </div>
         </div>
-        <div class="p-3 bg-gray-50 rounded-xl">
-          <p class="text-xs text-gray-400">Broker 地址</p>
-          <p class="text-sm font-semibold text-gray-700 truncate">{{ mqttStatus.broker || '-' }}</p>
+        <div class="p-2.5 bg-gray-50 rounded-xl min-w-0">
+          <p class="text-xs text-gray-400 whitespace-nowrap">Broker 地址</p>
+          <p class="text-xs font-semibold text-gray-700 truncate" :title="mqttStatus.broker">{{ mqttStatus.broker || '-' }}</p>
         </div>
-        <div class="p-3 bg-gray-50 rounded-xl">
-          <p class="text-xs text-gray-400">连接信息</p>
-          <p class="text-sm font-semibold text-gray-700">
+        <div class="p-2.5 bg-gray-50 rounded-xl">
+          <p class="text-xs text-gray-400 whitespace-nowrap">连接信息</p>
+          <p class="text-xs font-semibold text-gray-700 whitespace-nowrap">
             {{ mqttStatus.protocol || '-' }}://{{ mqttStatus.port || '-' }}
             {{ mqttStatus.tls_enabled ? '🔒' : '🔓' }}
           </p>
         </div>
-        <div class="p-3 bg-gray-50 rounded-xl">
-          <p class="text-xs text-gray-400">订阅主题</p>
-          <p class="text-sm font-semibold text-gray-700">
+        <div class="p-2.5 bg-gray-50 rounded-xl">
+          <p class="text-xs text-gray-400 whitespace-nowrap">订阅主题</p>
+          <p class="text-xs font-semibold text-gray-700 whitespace-nowrap">
             {{ (mqttStatus.subscriptions || []).length }} 个
           </p>
         </div>

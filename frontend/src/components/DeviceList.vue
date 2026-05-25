@@ -1,43 +1,43 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-5">
     <!-- 统计卡片 -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-4xl font-bold text-gray-800">{{ stats.total }}</div>
-            <div class="text-gray-500 mt-1 font-medium">总设备数</div>
+            <div class="text-2xl font-bold text-gray-800">{{ stats.total }}</div>
+            <div class="text-xs text-gray-500 mt-0.5 whitespace-nowrap">总设备数</div>
           </div>
-          <div class="text-4xl">📊</div>
+          <div class="text-2xl flex-shrink-0">📊</div>
         </div>
       </div>
       
-      <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-4xl font-bold text-green-500">{{ stats.online }}</div>
-            <div class="text-gray-500 mt-1 font-medium">在线设备</div>
+            <div class="text-2xl font-bold text-green-500">{{ stats.online }}</div>
+            <div class="text-xs text-gray-500 mt-0.5 whitespace-nowrap">在线设备</div>
           </div>
-          <div class="text-4xl">🟢</div>
+          <div class="text-2xl flex-shrink-0">🟢</div>
         </div>
       </div>
       
-      <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-4xl font-bold text-red-500">{{ stats.offline }}</div>
-            <div class="text-gray-500 mt-1 font-medium">离线设备</div>
+            <div class="text-2xl font-bold text-red-500">{{ stats.offline }}</div>
+            <div class="text-xs text-gray-500 mt-0.5 whitespace-nowrap">离线设备</div>
           </div>
-          <div class="text-4xl">🔴</div>
+          <div class="text-2xl flex-shrink-0">🔴</div>
         </div>
       </div>
     </div>
 
     <!-- 设备列表 -->
-    <div class="bg-white rounded-2xl shadow-lg p-8">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-bold text-gray-800 flex items-center">
-          <span class="text-2xl mr-2">📱</span>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-gray-800 flex items-center whitespace-nowrap">
+          <span class="text-xl mr-2">📱</span>
           设备列表
         </h2>
         <button
@@ -60,7 +60,7 @@
         <p class="text-lg">暂无设备，点击"添加设备"开始添加</p>
       </div>
       
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <DeviceCard
           v-for="device in devices"
           :key="device.id"
