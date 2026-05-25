@@ -21,6 +21,19 @@
       <div class="p-6 space-y-6">
         <!-- 智能灯特殊界面 -->
         <div v-if="device.type === 'smart_light'" class="space-y-6">
+          <!-- 当前工作状态 -->
+          <div class="grid grid-cols-2 gap-4">
+            <div :class="['rounded-xl p-5 text-center border-2 transition-all', lightOn ? 'bg-green-50 border-green-400' : 'bg-gray-100 border-gray-300']">
+              <div class="text-sm font-medium mb-1" :class="lightOn ? 'text-green-600' : 'text-gray-500'">灯光</div>
+              <div class="text-3xl">{{ lightOn ? '🔆' : '🌙' }}</div>
+              <div class="text-lg font-bold mt-1" :class="lightOn ? 'text-green-700' : 'text-gray-400'">{{ lightOn ? '已开启' : '已关闭' }}</div>
+            </div>
+            <div :class="['rounded-xl p-5 text-center border-2 transition-all', isAutoMode ? 'bg-blue-50 border-blue-400' : 'bg-orange-50 border-orange-400']">
+              <div class="text-sm font-medium mb-1" :class="isAutoMode ? 'text-blue-600' : 'text-orange-600'">模式</div>
+              <div class="text-3xl">{{ isAutoMode ? '🤖' : '✋' }}</div>
+              <div class="text-lg font-bold mt-1" :class="isAutoMode ? 'text-blue-700' : 'text-orange-700'">{{ isAutoMode ? '自动控制' : '手动控制' }}</div>
+            </div>
+          </div>
           <!-- 传感器数据 -->
           <div class="grid grid-cols-2 gap-4">
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5">
@@ -48,21 +61,21 @@
             <button
               @click="sendCommand('ON')"
               :disabled="loading"
-              class="py-4 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-all font-semibold disabled:opacity-50"
+              :class="['py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2', lightOn ? 'bg-green-500 text-white border-green-500' : 'bg-white text-green-600 border-green-300 hover:bg-green-50']"
             >
               🔆 开灯
             </button>
             <button
               @click="sendCommand('OFF')"
               :disabled="loading"
-              class="py-4 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-all font-semibold disabled:opacity-50"
+              :class="['py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2', !lightOn ? 'bg-gray-500 text-white border-gray-500' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50']"
             >
               🌙 关灯
             </button>
             <button
               @click="sendCommand('AUTO')"
               :disabled="loading"
-              class="py-4 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-semibold disabled:opacity-50"
+              :class="['py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2', isAutoMode ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-blue-600 border-blue-300 hover:bg-blue-50']"
             >
               🤖 自动
             </button>
@@ -180,6 +193,18 @@ const customCommand = ref('')
 const loading = ref(false)
 
 const icon = computed(() => store.getDeviceIcon(props.device?.type))
+
+const lightOn = computed(() => {
+  const meta = props.device?.metadata
+  if (!meta) return false
+  return meta.light === 'ON' || meta.light === true
+})
+
+const isAutoMode = computed(() => {
+  const meta = props.device?.metadata
+  if (!meta) return false
+  return meta.mode === 'auto' || meta.mode === true
+})
 
 watch(
   () => props.device,

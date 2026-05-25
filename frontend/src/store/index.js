@@ -36,8 +36,9 @@ const store = reactive({
     this.currentUsername = data.user.username
     this.loggedIn = true
     api.setToken(data.token)
+    localStorage.setItem('iot_token', data.token)
+    localStorage.setItem('iot_username', data.user.username)
     
-    // 加载初始数据
     await Promise.all([
       this.loadDevices(),
       this.loadStats(),
@@ -54,6 +55,8 @@ const store = reactive({
     this.currentUsername = data.user.username
     this.loggedIn = true
     api.setToken(data.token)
+    localStorage.setItem('iot_token', data.token)
+    localStorage.setItem('iot_username', data.user.username)
     
     await Promise.all([
       this.loadDevices(),
@@ -72,11 +75,33 @@ const store = reactive({
     this.devices = []
     this.stats = { total: 0, online: 0, offline: 0 }
     this.selectedDevice = null
+    localStorage.removeItem('iot_token')
+    localStorage.removeItem('iot_username')
     if (this.ws) {
       this.ws.close()
       this.ws = null
     }
     api.setToken(null)
+  },
+
+  async tryAutoLogin() {
+    const savedToken = localStorage.getItem('iot_token')
+    const savedUsername = localStorage.getItem('iot_username')
+    if (!savedToken) return false
+    
+    this.token = savedToken
+    this.currentUsername = savedUsername || ''
+    api.setToken(savedToken)
+    
+    try {
+      await this.loadDevices()
+      this.loggedIn = true
+      this.connectWebSocket()
+      return true
+    } catch (e) {
+      this.logout()
+      return false
+    }
   },
 
   async loadDevices() {

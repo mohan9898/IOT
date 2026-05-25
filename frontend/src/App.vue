@@ -236,6 +236,9 @@ function checkMQTTStatus() {
 }
 
 onMounted(() => {
+  if (!store.loggedIn) {
+    store.tryAutoLogin()
+  }
   checkMQTTStatus()
   mqttTimer = setInterval(checkMQTTStatus, 30000)
 })

@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -200,14 +201,14 @@ func (s *SQLite) GetDevice(id string) (*Device, error) {
 
 func (s *SQLite) CreateDevice(d *Device) error {
 	meta, _ := json.Marshal(d.Metadata)
-	_, err := s.db.Exec(`INSERT INTO devices (id, name, type, status, metadata) VALUES (?, ?, ?, ?, ?)`,
+	_, err := s.db.Exec(`INSERT OR IGNORE INTO devices (id, name, type, status, metadata, last_seen) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
 		d.ID, d.Name, d.Type, d.Status, string(meta))
 	return err
 }
 
 func (s *SQLite) UpdateDevice(d *Device) error {
 	meta, _ := json.Marshal(d.Metadata)
-	_, err := s.db.Exec(`UPDATE devices SET name = ?, type = ?, status = ?, metadata = ? WHERE id = ?`,
+	_, err := s.db.Exec(`UPDATE devices SET name = ?, type = ?, status = ?, metadata = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?`,
 		d.Name, d.Type, d.Status, string(meta), d.ID)
 	return err
 }
@@ -215,6 +216,18 @@ func (s *SQLite) UpdateDevice(d *Device) error {
 func (s *SQLite) UpdateDeviceStatus(id, status string) error {
 	_, err := s.db.Exec("UPDATE devices SET status = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?", status, id)
 	return err
+}
+
+func (s *SQLite) MarkOfflineDevices(timeoutMinutes int) (int, error) {
+	result, err := s.db.Exec(
+		"UPDATE devices SET status = 'offline' WHERE status = 'online' AND last_seen < datetime('now', ?)",
+		fmt.Sprintf("-%d minutes", timeoutMinutes),
+	)
+	if err != nil {
+		return 0, err
+	}
+	count, _ := result.RowsAffected()
+	return int(count), nil
 }
 
 func (s *SQLite) UpdateDeviceMetadata(id string, metadata map[string]interface{}) error {

@@ -906,9 +906,11 @@ func (h *Handler) handleSmartLightMessage(topic string, payload []byte) {
 			ID   string `json:"id"`
 			Name string `json:"name"`
 		}
-		if json.Unmarshal(payload, &reg) == nil {
-			device, _ := h.db.GetDevice(reg.ID)
-			if device == nil || device.ID == "" {
+		if json.Unmarshal(payload, &reg) == nil && reg.ID != "" {
+			device, err := h.db.GetDevice(reg.ID)
+			if err == nil && device != nil && device.ID != "" {
+				h.db.UpdateDeviceStatus(device.ID, "online")
+			} else {
 				h.db.CreateDevice(&db.Device{
 					ID:        reg.ID,
 					Name:      reg.Name,
@@ -917,8 +919,7 @@ func (h *Handler) handleSmartLightMessage(topic string, payload []byte) {
 					Metadata:  make(map[string]interface{}),
 					CreatedAt: time.Now(),
 				})
-			} else {
-				h.db.UpdateDeviceStatus(device.ID, "online")
+				h.db.UpdateDeviceStatus(reg.ID, "online")
 			}
 		}
 	case "status":
@@ -987,9 +988,11 @@ func (h *Handler) handleGenericDeviceMessage(topic string, payload []byte) {
 			Name string `json:"name"`
 			Type string `json:"type"`
 		}
-		if json.Unmarshal(payload, &reg) == nil {
-			device, _ := h.db.GetDevice(reg.ID)
-			if device == nil || device.ID == "" {
+		if json.Unmarshal(payload, &reg) == nil && reg.ID != "" {
+			device, err := h.db.GetDevice(reg.ID)
+			if err == nil && device != nil && device.ID != "" {
+				h.db.UpdateDeviceStatus(device.ID, "online")
+			} else {
 				h.db.CreateDevice(&db.Device{
 					ID:        reg.ID,
 					Name:      reg.Name,
@@ -998,8 +1001,7 @@ func (h *Handler) handleGenericDeviceMessage(topic string, payload []byte) {
 					Metadata:  make(map[string]interface{}),
 					CreatedAt: time.Now(),
 				})
-			} else {
-				h.db.UpdateDeviceStatus(device.ID, "online")
+				h.db.UpdateDeviceStatus(reg.ID, "online")
 			}
 		}
 	case "status":

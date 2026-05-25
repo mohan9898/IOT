@@ -118,6 +118,19 @@ func main() {
 		}
 	}()
 
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			count, err := database.MarkOfflineDevices(2)
+			if err != nil {
+				logger.Warn("Failed to mark offline devices", zap.Error(err))
+			} else if count > 0 {
+				logger.Info("Devices marked offline", zap.Int("count", count))
+			}
+		}
+	}()
+
 	// 等待信号
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
