@@ -25,7 +25,10 @@ COPY dist/ ./dist/
 
 RUN mkdir -p /app/data && chown -R iot:iot /app
 
-USER iot
+RUN printf '#!/bin/sh\n\
+chown -R 1000:1000 /app/data 2>/dev/null || true\n\
+exec setpriv --reuid=1000 --regid=1000 --clear-groups /app/iot-manager\n' \
+    > /entrypoint.sh && chmod +x /entrypoint.sh
 
 EXPOSE 6116
 
@@ -37,4 +40,4 @@ ENV GIN_MODE=release
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=3 \
   CMD curl -f http://localhost:6116/health || exit 1
 
-CMD ["/app/iot-manager"]
+ENTRYPOINT ["/entrypoint.sh"]
