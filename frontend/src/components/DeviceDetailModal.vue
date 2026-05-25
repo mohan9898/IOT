@@ -219,6 +219,15 @@ const close = () => {
 }
 
 const sendCommand = async (command) => {
+  const cmd = command.toUpperCase()
+  if (props.device?.metadata) {
+    if (cmd === 'ON' || cmd === 'OFF') {
+      props.device.metadata.mode = 'manual'
+    } else if (cmd === 'AUTO') {
+      props.device.metadata.mode = 'auto'
+    }
+  }
+
   loading.value = true
   try {
     await api.sendCommand(props.device.id, command)

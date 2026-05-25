@@ -641,10 +641,42 @@ func (h *Handler) SendCommand(c *gin.Context) {
 		return
 	}
 
+	h.updateDeviceModeOnCommand(device, req.Command)
+
 	h.logger.Info("Command sent", zap.String("device_id", req.DeviceID), zap.String("command", req.Command))
 	metrics.RecordControlCommand(req.DeviceID, req.Command)
 	metrics.RecordMQTTMessage(topic, "sent")
 	c.JSON(http.StatusOK, gin.H{"message": "Command sent", "topic": topic})
+}
+
+func (h *Handler) updateDeviceModeOnCommand(device *db.Device, command string) {
+	if device.Type != "smart_light" {
+		return
+	}
+
+	cmd := strings.ToUpper(command)
+	if cmd != "ON" && cmd != "OFF" && cmd != "AUTO" {
+		return
+	}
+
+	if device.Metadata == nil {
+		device.Metadata = make(map[string]interface{})
+	}
+
+	switch cmd {
+	case "ON", "OFF":
+		device.Metadata["mode"] = "manual"
+	case "AUTO":
+		device.Metadata["mode"] = "auto"
+	}
+
+	if err := h.db.UpdateDevice(device); err != nil {
+		h.logger.Warn("Failed to update device mode on command",
+			zap.String("device_id", device.ID),
+			zap.String("command", command),
+			zap.Error(err),
+		)
+	}
 }
 
 func (h *Handler) SetThreshold(c *gin.Context) {
