@@ -1,31 +1,93 @@
+# =============================================================================
+# IoT 设备管理器 - Docker Compose 部署配置
+# =============================================================================
+#
+# 快速部署：
+#   1. cp .env.example .env      # 创建环境变量文件
+#   2. 编辑 .env 设置 JWT_SECRET 和 MQTT 凭证
+#   3. docker compose up -d      # 启动服务
+#   4. 浏览器访问 http://localhost:6116
+#
+# 常用命令：
+#   docker compose up -d         # 启动（后台运行）
+#   docker compose down          # 停止并删除容器
+#   docker compose restart       # 重启服务
+#   docker compose pull          # 拉取最新镜像
+#   docker compose logs -f       # 查看实时日志
+#   docker compose ps            # 查看运行状态
+#
+# =============================================================================
 
-# IoT Manager - Core Docker Compose
 version: '3.8'
 
 services:
+  # ---------------------------------------------------------------------------
+  # IoT Manager 主服务
+  # 包含：Go 后端 API + Vue 前端页面 + MQTT 设备通信
+  # 镜像由 GitHub Actions 自动构建并发布到 GHCR
+  # ---------------------------------------------------------------------------
   iot-manager:
-    # Use GitHub Container Registry image
+    # Docker 镜像地址（GitHub Container Registry）
+    # 每次推送代码到 main 分支时自动构建更新
     image: ghcr.io/mohan9898/iot:latest
+
+    # 容器名称（方便 docker logs iot-manager 等命令直接使用）
     container_name: iot-manager
+
+    # 重启策略：容器异常退出或 Docker 重启时自动恢复
+    # unless-stopped：除非手动执行 docker stop，否则一直自动重启
     restart: unless-stopped
+
+    # 端口映射：宿主机端口:容器端口
+    # 修改前面的 6116 可以更改外部访问端口
     ports:
       - "6116:6116"
+
+    # ---------------------------------------------------------------------------
+    # 环境变量配置
+    # 值从 .env 文件读取，未设置时使用默认值
+    # 语法：${变量名:-默认值}  表示有则用变量值，无则用默认值
+    # ---------------------------------------------------------------------------
     environment:
-      # Required - change this in production!
+      # ===== 必填配置 =====
+      # JWT 签名密钥 — 生产环境务必修改为随机字符串
+      # 生成方式：openssl rand -base64 32
       - JWT_SECRET=${JWT_SECRET}
-      # MQTT Configuration
+
+      # ===== MQTT 连接配置 =====
+      # MQTT Broker 地址（默认使用 EMQX 公共测试服务器）
       - MQTT_BROKER=${MQTT_BROKER:-d11aab19.ala.cn-hangzhou.emqxsl.cn}
+      # MQTT 端口：8883(TLS加密) / 1883(普通TCP)
       - MQTT_PORT=${MQTT_PORT:-8883}
+      # 连接协议：ssl / tcp / ws / wss
       - MQTT_PROTOCOL=${MQTT_PROTOCOL:-ssl}
+      # MQTT 认证用户名（Broker 要求时填写）
       - MQTT_USERNAME=${MQTT_USERNAME}
+      # MQTT 认证密码（Broker 要求时填写）
       - MQTT_PASSWORD=${MQTT_PASSWORD}
-      # Database
+
+      # ===== 数据库配置 =====
+      # SQLite 数据库文件存储路径（容器内路径，无需修改）
       - DB_PATH=/app/data/iot.db
+      # 是否启用数据库自动备份（每小时检查一次，满足间隔条件时备份）
       - DB_BACKUP_ENABLE=${DB_BACKUP_ENABLE:-true}
+      # 备份文件存储目录（容器内路径）
       - DB_BACKUP_PATH=/app/data/backup
+
+    # ---------------------------------------------------------------------------
+    # 数据持久化
+    # 将容器内 /app/data 映射到宿主机 Docker Volume
+    # 数据不会随容器删除而丢失
+    # ---------------------------------------------------------------------------
     volumes:
       - iot-data:/app/data
 
+# =============================================================================
+# 数据卷定义
+# =============================================================================
 volumes:
+  # IoT Manager 数据卷
+  # 存储 SQLite 数据库文件和自动备份
+  # 查看实际路径：docker volume inspect iot-manager-data
   iot-data:
     name: iot-manager-data
