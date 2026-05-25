@@ -96,6 +96,10 @@ class ApiService {
     return this.request('/dashboard')
   }
 
+  async getMQTTStatus() {
+    return this.request('/mqtt/status')
+  }
+
   // 设备类型相关
   async getDeviceTypes() {
     return this.request('/device-types')

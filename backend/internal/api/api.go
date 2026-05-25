@@ -17,6 +17,7 @@ import (
 	"github.com/example/iot-manager/internal/auth"
 	"github.com/example/iot-manager/internal/db"
 	"github.com/example/iot-manager/internal/metrics"
+	mqttstatus "github.com/example/iot-manager/internal/mqtt"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -89,6 +90,8 @@ func (h *Handler) SetupRoutes(r *gin.Engine) {
 		api.GET("/ws", h.WebSocketHandler)
 
 		api.GET("/dashboard", h.GetDashboard)
+
+		api.GET("/mqtt/status", h.GetMQTTStatus)
 	}
 
 	// 静态文件服务 — 路径可通过 STATIC_DIR 环境变量自定义
@@ -678,7 +681,32 @@ func (h *Handler) GetCommandHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, commands)
 }
 
+func (h *Handler) GetMQTTStatus(c *gin.Context) {
+	status := mqttstatus.GetStatus()
+	liveConnected := h.mqtt != nil && h.mqtt.IsConnected()
+	status.Connected = liveConnected
 
+	subscriptions := []string{}
+	if h.mqtt != nil {
+		subscriptions = []string{
+			"smart_light/#",
+			"+/register",
+			"+/status",
+			"+/control",
+			"+/metric",
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"connected":     status.Connected,
+		"broker":        status.Broker,
+		"port":          status.Port,
+		"protocol":      status.Protocol,
+		"tls_enabled":   status.TLSEnabled,
+		"connected_at":  status.ConnectedAt,
+		"subscriptions": subscriptions,
+	})
+}
 
 func (h *Handler) WebSocketHandler(c *gin.Context) {
 	upgrader := websocket.Upgrader{

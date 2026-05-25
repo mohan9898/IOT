@@ -61,6 +61,49 @@
       </div>
     </div>
 
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-lg font-semibold text-gray-800">MQTT 连接状态</h2>
+        <button
+          @click="refreshMQTT"
+          :disabled="mqttLoading"
+          class="text-sm text-blue-500 hover:text-blue-600 disabled:opacity-50"
+        >
+          {{ mqttLoading ? '检测中...' : '刷新检测' }}
+        </button>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+          <span
+            :class="['w-3 h-3 rounded-full flex-shrink-0', mqttStatus.connected ? 'bg-green-500 animate-pulse' : 'bg-red-500']"
+          ></span>
+          <div>
+            <p class="text-xs text-gray-400">连接状态</p>
+            <p :class="['text-sm font-semibold', mqttStatus.connected ? 'text-green-600' : 'text-red-500']">
+              {{ mqttStatus.connected ? '已连接' : '已断开' }}
+            </p>
+          </div>
+        </div>
+        <div class="p-3 bg-gray-50 rounded-xl">
+          <p class="text-xs text-gray-400">Broker 地址</p>
+          <p class="text-sm font-semibold text-gray-700 truncate">{{ mqttStatus.broker || '-' }}</p>
+        </div>
+        <div class="p-3 bg-gray-50 rounded-xl">
+          <p class="text-xs text-gray-400">连接信息</p>
+          <p class="text-sm font-semibold text-gray-700">
+            {{ mqttStatus.protocol || '-' }}://{{ mqttStatus.port || '-' }}
+            {{ mqttStatus.tls_enabled ? '🔒' : '🔓' }}
+          </p>
+        </div>
+        <div class="p-3 bg-gray-50 rounded-xl">
+          <p class="text-xs text-gray-400">订阅主题</p>
+          <p class="text-sm font-semibold text-gray-700">
+            {{ (mqttStatus.subscriptions || []).length }} 个
+          </p>
+        </div>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
       <div class="lg:col-span-3 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h2 class="text-lg font-semibold text-gray-800 mb-4">设备类型分布</h2>
@@ -158,11 +201,21 @@ import store from '../store'
 const emit = defineEmits(['navigate'])
 
 const loading = ref(false)
+const mqttLoading = ref(false)
 
 const dashboard = reactive({
   stats: { total: 0, online: 0, offline: 0 },
   typeDistribution: [],
   recentDevices: [],
+})
+
+const mqttStatus = reactive({
+  connected: false,
+  broker: '',
+  port: 0,
+  protocol: '',
+  tls_enabled: false,
+  subscriptions: [],
 })
 
 const sortedTypes = computed(() => {
@@ -202,10 +255,30 @@ async function loadDashboard() {
 
 function refresh() {
   loadDashboard()
+  loadMQTTStatus()
+}
+
+async function loadMQTTStatus() {
+  mqttLoading.value = true
+  try {
+    const data = await store.api.getMQTTStatus()
+    if (data) {
+      Object.assign(mqttStatus, data)
+    }
+  } catch (e) {
+    console.error('加载MQTT状态失败:', e)
+  } finally {
+    mqttLoading.value = false
+  }
+}
+
+function refreshMQTT() {
+  loadMQTTStatus()
 }
 
 onMounted(() => {
   loadDashboard()
+  loadMQTTStatus()
 })
 
 defineExpose({ refresh })

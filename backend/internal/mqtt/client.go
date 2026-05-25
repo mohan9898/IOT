@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync"
 	"time"
 
 	mqttlib "github.com/eclipse/paho.mqtt.golang"
@@ -14,9 +15,39 @@ import (
 	"github.com/example/iot-manager/internal/metrics"
 )
 
+type ConnectionStatus struct {
+	Connected   bool      `json:"connected"`
+	Broker      string    `json:"broker"`
+	Port        int       `json:"port"`
+	Protocol    string    `json:"protocol"`
+	TLSEnabled  bool      `json:"tls_enabled"`
+	ConnectedAt time.Time `json:"connected_at"`
+}
+
+var (
+	currentStatus = ConnectionStatus{}
+	statusMu      sync.RWMutex
+)
+
+func GetStatus() ConnectionStatus {
+	statusMu.RLock()
+	defer statusMu.RUnlock()
+	return currentStatus
+}
+
 func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
 	addr := buildAddr(cfg)
 	clientID := fmt.Sprintf("%s%d", cfg.ClientIDPrefix, rand.Int())
+
+	statusMu.Lock()
+	currentStatus = ConnectionStatus{
+		Connected:  false,
+		Broker:     cfg.Broker,
+		Port:       cfg.Port,
+		Protocol:   cfg.Protocol,
+		TLSEnabled: cfg.TLSEnabled,
+	}
+	statusMu.Unlock()
 
 	opts := mqttlib.NewClientOptions()
 	opts.AddBroker(addr)
@@ -41,11 +72,18 @@ func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
 	opts.OnConnect = func(c mqttlib.Client) {
 		log.Println("MQTT connected:", addr)
 		metrics.SetMQTTConnected(true)
+		statusMu.Lock()
+		currentStatus.Connected = true
+		currentStatus.ConnectedAt = time.Now()
+		statusMu.Unlock()
 	}
 
 	opts.OnConnectionLost = func(c mqttlib.Client, err error) {
 		log.Println("MQTT connection lost:", err)
 		metrics.SetMQTTConnected(false)
+		statusMu.Lock()
+		currentStatus.Connected = false
+		statusMu.Unlock()
 	}
 
 	opts.OnReconnecting = func(c mqttlib.Client, opts *mqttlib.ClientOptions) {
@@ -61,6 +99,11 @@ func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
 	}
 
 	metrics.SetMQTTConnected(true)
+	statusMu.Lock()
+	currentStatus.Connected = true
+	currentStatus.ConnectedAt = time.Now()
+	statusMu.Unlock()
+
 	return client, nil
 }
 

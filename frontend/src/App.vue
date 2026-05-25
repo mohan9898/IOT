@@ -100,8 +100,22 @@
               >
                 <span class="text-lg">{{ store.notificationsEnabled ? '🔔' : '🔕' }}</span>
               </button>
+
+              <!-- MQTT 状态指示器 -->
+              <button
+                @click="activeTab = 'dashboard'"
+                class="px-3 py-2.5 rounded-xl font-medium transition-all text-sm bg-gray-100 hover:bg-gray-200"
+                :title="mqttIndicator.connected ? 'MQTT 已连接' : 'MQTT 已断开'"
+              >
+                <span class="flex items-center gap-1.5">
+                  <span
+                    :class="['w-2.5 h-2.5 rounded-full flex-shrink-0', mqttIndicator.connected ? 'bg-green-500 animate-pulse' : 'bg-red-500']"
+                  ></span>
+                  <span class="text-xs text-gray-500 hidden lg:inline">MQTT</span>
+                </span>
+              </button>
               
-              <div class="flex items-center mr-2">
+              <div class="flex items-center mr-2 mt-0">
                 <span class="text-gray-500 mr-1">👤</span>
                 <span class="text-gray-700 font-medium text-sm">{{ store.currentUsername }}</span>
               </div>
@@ -188,7 +202,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import store from './store'
 import LoginPage from './components/LoginPage.vue'
 import Dashboard from './components/Dashboard.vue'
@@ -201,6 +215,32 @@ import DeviceDetailModal from './components/DeviceDetailModal.vue'
 const activeTab = ref('dashboard')
 const mobileMenuOpen = ref(false)
 const showWelcome = ref(false)
+
+const mqttIndicator = reactive({
+  connected: false,
+})
+
+let mqttTimer = null
+
+function checkMQTTStatus() {
+  if (!store.token) return
+  store.api.getMQTTStatus().then(data => {
+    if (data) {
+      mqttIndicator.connected = data.connected
+    }
+  }).catch(() => {
+    mqttIndicator.connected = false
+  })
+}
+
+onMounted(() => {
+  checkMQTTStatus()
+  mqttTimer = setInterval(checkMQTTStatus, 30000)
+})
+
+onUnmounted(() => {
+  if (mqttTimer) clearInterval(mqttTimer)
+})
 
 const tabs = computed(() => [
   { id: 'dashboard', label: '仪表盘', icon: '📊' },
