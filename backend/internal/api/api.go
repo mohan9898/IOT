@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -90,8 +91,13 @@ func (h *Handler) SetupRoutes(r *gin.Engine) {
 		api.GET("/dashboard", h.GetDashboard)
 	}
 
-	// 静态文件服务
-	r.Static("/web", "../dist")
+	// 静态文件服务 — 路径可通过 STATIC_DIR 环境变量自定义
+	// Docker 中默认为 ./dist，本地开发可设置 STATIC_DIR=../dist
+	staticDir := "./dist"
+	if d := os.Getenv("STATIC_DIR"); d != "" {
+		staticDir = d
+	}
+	r.Static("/web", staticDir)
 	r.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/web/")
 	})
