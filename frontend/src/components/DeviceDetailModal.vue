@@ -219,20 +219,33 @@ const close = () => {
 }
 
 const sendCommand = async (command) => {
+  const meta = props.device?.metadata
   const cmd = command.toUpperCase()
-  if (props.device?.metadata) {
-    if (cmd === 'ON' || cmd === 'OFF') {
-      props.device.metadata.mode = 'manual'
+
+  let prevLight, prevMode
+  if (meta) {
+    prevLight = meta.light
+    prevMode = meta.mode
+
+    if (cmd === 'ON') {
+      meta.light = 'ON'
+      meta.mode = 'manual'
+    } else if (cmd === 'OFF') {
+      meta.light = 'OFF'
+      meta.mode = 'manual'
     } else if (cmd === 'AUTO') {
-      props.device.metadata.mode = 'auto'
+      meta.mode = 'auto'
     }
   }
 
   loading.value = true
   try {
     await api.sendCommand(props.device.id, command)
-    await store.loadDevices()
   } catch (e) {
+    if (meta) {
+      meta.light = prevLight
+      meta.mode = prevMode
+    }
     alert(e.message)
   } finally {
     loading.value = false
@@ -246,11 +259,20 @@ const sendCustomCommand = async () => {
 }
 
 const handleSetThreshold = async () => {
+  const meta = props.device?.metadata
+  const prevThreshold = meta?.threshold
+
+  if (meta) {
+    meta.threshold = threshold.value
+  }
+
   loading.value = true
   try {
     await api.setThreshold(threshold.value)
-    await store.loadDevices()
   } catch (e) {
+    if (meta) {
+      meta.threshold = prevThreshold
+    }
     alert(e.message)
   } finally {
     loading.value = false

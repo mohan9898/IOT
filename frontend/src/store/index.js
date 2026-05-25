@@ -109,6 +109,10 @@ const store = reactive({
     try {
       const data = await api.getDevices()
       this.devices = data || []
+      if (this.selectedDevice) {
+        const updated = (data || []).find(d => d.id === this.selectedDevice.id)
+        if (updated) this.selectedDevice = updated
+      }
     } finally {
       this.loading.devices = false
     }
