@@ -53,12 +53,12 @@ services:
       - JWT_SECRET=${JWT_SECRET}
 
       # ===== MQTT 连接配置 =====
-      # MQTT Broker 地址（默认使用 EMQX 公共测试服务器）
-      - MQTT_BROKER=${MQTT_BROKER:-d11aab19.ala.cn-hangzhou.emqxsl.cn}
+      # MQTT Broker 地址（必须在 .env 文件中配置）
+      - MQTT_BROKER=${MQTT_BROKER}
       # MQTT 端口：8084(WSS加密) / 8883(TLS加密)
-      - MQTT_PORT=${MQTT_PORT:-8084}
+      - MQTT_PORT=${MQTT_PORT:-8883}
       # 连接协议：wss / ssl / tcp / ws
-      - MQTT_PROTOCOL=${MQTT_PROTOCOL:-wss}
+      - MQTT_PROTOCOL=${MQTT_PROTOCOL:-ssl}
       # WebSocket 连接路径（例如 /mqtt，仅 ws/wss 协议生效）
       - MQTT_PATH=${MQTT_PATH:-/mqtt}
       # MQTT 认证用户名（Broker 要求时填写）
