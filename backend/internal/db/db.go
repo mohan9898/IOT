@@ -4,11 +4,40 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// 命令中英文翻译映射
+var commandTranslations = map[string]string{
+	"ON":     "开灯",
+	"OFF":    "关灯",
+	"AUTO":   "自动模式",
+	"SET_THRESHOLD": "设置阈值",
+	"READ":   "读取",
+	"CALIBRATE": "校准",
+	"START":  "启动",
+	"STOP":   "停止",
+	"RESET":  "重置",
+	"SNAPSHOT": "拍照",
+	"RECORD": "录制",
+	"STREAM": "推流",
+	"SET_TEMP": "设置温度",
+	"SET_MODE": "设置模式",
+	"TOGGLE": "切换",
+}
+
+// translateCommandToChinese 将英文命令翻译为中文
+func translateCommandToChinese(command string) string {
+	cmd := strings.ToUpper(strings.TrimSpace(command))
+	if translation, ok := commandTranslations[cmd]; ok {
+		return translation
+	}
+	return command // 如果没有匹配的翻译，返回原文
+}
 
 type User struct {
 	ID           int64     `json:"id"`
@@ -323,8 +352,11 @@ func (s *SQLite) GetCommands(deviceID string) ([]*Command, error) {
 	for rows.Next() {
 		c := &Command{}
 		var paramsStr string
-		rows.Scan(&c.ID, &c.DeviceID, &c.Command, &paramsStr, &c.Status, &c.SentAt, &c.ExecutedAt, &c.Response)
+		var originalCommand string
+		rows.Scan(&c.ID, &c.DeviceID, &originalCommand, &paramsStr, &c.Status, &c.SentAt, &c.ExecutedAt, &c.Response)
 		json.Unmarshal([]byte(paramsStr), &c.Parameters)
+		// 将命令翻译为中文显示
+		c.Command = translateCommandToChinese(originalCommand)
 		cmds = append(cmds, c)
 	}
 	return cmds, nil
@@ -361,8 +393,11 @@ func (s *SQLite) GetAllCommands(deviceID string, page, pageSize int) ([]*Command
 	for rows.Next() {
 		c := &Command{}
 		var paramsStr string
-		rows.Scan(&c.ID, &c.DeviceID, &c.Command, &paramsStr, &c.Status, &c.SentAt, &c.ExecutedAt, &c.Response)
+		var originalCommand string
+		rows.Scan(&c.ID, &c.DeviceID, &originalCommand, &paramsStr, &c.Status, &c.SentAt, &c.ExecutedAt, &c.Response)
 		json.Unmarshal([]byte(paramsStr), &c.Parameters)
+		// 将命令翻译为中文显示
+		c.Command = translateCommandToChinese(originalCommand)
 		cmds = append(cmds, c)
 	}
 	return cmds, total, nil
