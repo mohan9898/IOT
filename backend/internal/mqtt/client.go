@@ -12,6 +12,7 @@ import (
 	mqttlib "github.com/eclipse/paho.mqtt.golang"
 	"github.com/example/iot-manager/config"
 	"github.com/example/iot-manager/internal/metrics"
+	"go.uber.org/zap"
 )
 
 type ConnectionStatus struct {
@@ -34,7 +35,7 @@ func GetStatus() ConnectionStatus {
 	return currentStatus
 }
 
-func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
+func Connect(cfg *config.MQTTConfig, logger *zap.Logger) (mqttlib.Client, error) {
 	addr := buildAddr(cfg)
 	clientID := fmt.Sprintf("%s%d", cfg.ClientIDPrefix, rand.Int())
 
@@ -69,7 +70,10 @@ func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
 	}
 
 	opts.OnConnect = func(c mqttlib.Client) {
-		fmt.Printf("[MQTT] 已连接: %s (KeepAlive=%ds)\n", addr, 60)
+		logger.Info("MQTT connected",
+			zap.String("addr", addr),
+			zap.String("client_id", clientID),
+		)
 		metrics.SetMQTTConnected(true)
 		statusMu.Lock()
 		currentStatus.Connected = true
@@ -78,7 +82,10 @@ func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
 	}
 
 	opts.OnConnectionLost = func(c mqttlib.Client, err error) {
-		fmt.Printf("[MQTT] 连接断开: %v (客户端状态=%v)\n", err, c.IsConnected())
+		logger.Warn("MQTT connection lost",
+			zap.Error(err),
+			zap.Bool("is_connected", c.IsConnected()),
+		)
 		metrics.SetMQTTConnected(false)
 		statusMu.Lock()
 		currentStatus.Connected = false
@@ -86,7 +93,7 @@ func Connect(cfg *config.MQTTConfig) (mqttlib.Client, error) {
 	}
 
 	opts.OnReconnecting = func(c mqttlib.Client, opts *mqttlib.ClientOptions) {
-		fmt.Println("[MQTT] 正在重连...")
+		logger.Info("MQTT reconnecting...")
 	}
 
 	client := mqttlib.NewClient(opts)

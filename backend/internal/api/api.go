@@ -624,6 +624,15 @@ func (h *Handler) SendCommand(c *gin.Context) {
 		return
 	}
 
+	if !h.mqtt.IsConnected() {
+		h.logger.Warn("MQTT not connected, attempting to reconnect", zap.String("device_id", req.DeviceID))
+		if !h.mqtt.IsConnectionOpen() {
+			h.logger.Error("MQTT connection is not open, cannot send command")
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "MQTT connection unavailable"})
+			return
+		}
+	}
+
 	payload, err := json.Marshal(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encode command"})
@@ -754,8 +763,7 @@ func (h *Handler) GetMQTTStatus(c *gin.Context) {
 	status := mqttstatus.GetStatus()
 
 	subscriptions := []string{}
-	clientActive := h.mqtt != nil
-	if clientActive {
+	if h.mqtt != nil {
 		subscriptions = []string{
 			"smart_light/#",
 			"+/register",
@@ -765,13 +773,10 @@ func (h *Handler) GetMQTTStatus(c *gin.Context) {
 			"$SYS/brokers/+/clients/+/connected",
 			"$SYS/brokers/+/clients/+/disconnected",
 		}
-		if h.mqtt.IsConnected() {
-			status.Connected = true
-		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"connected":       status.Connected || clientActive,
+		"connected":       status.Connected,
 		"broker":          status.Broker,
 		"port":            status.Port,
 		"protocol":        status.Protocol,

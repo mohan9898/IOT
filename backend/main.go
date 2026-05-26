@@ -62,7 +62,7 @@ func main() {
 	}
 
 	// 连接 MQTT
-	mqttClient, err := mqtt.Connect(&cfg.MQTT)
+	mqttClient, err := mqtt.Connect(&cfg.MQTT, logger)
 	if err != nil {
 		logger.Warn("Failed to connect to MQTT broker, continuing without MQTT", zap.Error(err))
 		// 创建一个 dummy 客户端，这样应用程序不会崩溃
