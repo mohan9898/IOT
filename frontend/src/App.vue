@@ -1,7 +1,15 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- 加载中 -->
+    <div v-if="loading" class="flex items-center justify-center min-h-screen">
+      <div class="text-center">
+        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-3"></div>
+        <p class="text-gray-500">加载中...</p>
+      </div>
+    </div>
+    
     <!-- 登录页面 -->
-    <LoginPage v-if="!store.loggedIn" />
+    <LoginPage v-else-if="!store.loggedIn" />
     
     <!-- 主应用 -->
     <div v-else>
@@ -217,6 +225,7 @@ import CommandRecords from './components/CommandRecords.vue'
 const activeTab = ref('dashboard')
 const mobileMenuOpen = ref(false)
 const showWelcome = ref(false)
+const loading = ref(true)
 
 const mqttIndicator = reactive({
   connected: false,
@@ -237,12 +246,16 @@ function checkMQTTStatus() {
   })
 }
 
-onMounted(() => {
-  if (!store.loggedIn) {
-    store.tryAutoLogin()
+onMounted(async () => {
+  try {
+    if (!store.loggedIn) {
+      await store.tryAutoLogin()
+    }
+    checkMQTTStatus()
+    mqttTimer = setInterval(checkMQTTStatus, 30000)
+  } finally {
+    loading.value = false
   }
-  checkMQTTStatus()
-  mqttTimer = setInterval(checkMQTTStatus, 30000)
 })
 
 onUnmounted(() => {
