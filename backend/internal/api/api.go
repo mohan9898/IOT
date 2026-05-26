@@ -633,18 +633,19 @@ func (h *Handler) SendCommand(c *gin.Context) {
 		}
 	}
 
-	payload, err := json.Marshal(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encode command"})
-		return
-	}
-
 	topic := fmt.Sprintf("%s/control", req.DeviceID)
 	if device.Type == "smart_light" {
 		topic = "smart_light/control"
 	}
 
-	if token := h.mqtt.Publish(topic, 0, false, payload); token.Wait() && token.Error() != nil {
+	// 尝试发送简单的字符串命令 (ON/OFF) 而不是 JSON
+	simplePayload := []byte(strings.ToUpper(req.Command))
+	h.logger.Info("Sending command", 
+		zap.String("topic", topic), 
+		zap.String("command", req.Command),
+		zap.String("payload", string(simplePayload)))
+
+	if token := h.mqtt.Publish(topic, 0, false, simplePayload); token.Wait() && token.Error() != nil {
 		h.logger.Error("Failed to send MQTT command", zap.Error(token.Error()))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send command"})
 		return
@@ -652,7 +653,7 @@ func (h *Handler) SendCommand(c *gin.Context) {
 
 	h.updateDeviceModeOnCommand(device, req.Command)
 
-	h.logger.Info("Command sent", zap.String("device_id", req.DeviceID), zap.String("command", req.Command))
+	h.logger.Info("Command sent successfully", zap.String("device_id", req.DeviceID), zap.String("command", req.Command), zap.String("topic", topic))
 	metrics.RecordControlCommand(req.DeviceID, req.Command)
 	metrics.RecordMQTTMessage(topic, "sent")
 	c.JSON(http.StatusOK, gin.H{"message": "Command sent", "topic": topic})
@@ -915,6 +916,10 @@ type SmartLightStatus struct {
 }
 
 func (h *Handler) HandleMQTTMessage(msg mqtt.Message) {
+	h.logger.Info("Received MQTT message", 
+		zap.String("topic", msg.Topic()), 
+		zap.String("payload", string(msg.Payload())))
+
 	data, _ := json.Marshal(map[string]interface{}{
 		"topic":   msg.Topic(),
 		"payload": string(msg.Payload()),
