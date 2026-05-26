@@ -297,7 +297,19 @@ func (s *SQLite) GetDeviceType(typeID string) (map[string]interface{}, error) {
 func (s *SQLite) CreateCommand(deviceID, command string, params map[string]interface{}) error {
 	p, _ := json.Marshal(params)
 	_, err := s.db.Exec("INSERT INTO commands (device_id, command, parameters) VALUES (?, ?, ?)", deviceID, command, string(p))
-	return err
+	if err != nil {
+		return err
+	}
+	s.CleanupOldCommands(200)
+	return nil
+}
+
+func (s *SQLite) CleanupOldCommands(maxRows int) {
+	s.db.Exec(`
+		DELETE FROM commands WHERE id NOT IN (
+			SELECT id FROM commands ORDER BY sent_at DESC LIMIT ?
+		)
+	`, maxRows)
 }
 
 func (s *SQLite) GetCommands(deviceID string) ([]*Command, error) {

@@ -124,7 +124,7 @@ func main() {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
-			count, err := database.MarkOfflineDevices(5)
+			count, err := database.MarkOfflineDevices(2)
 			if err != nil {
 				logger.Warn("Failed to mark offline devices", zap.Error(err))
 			} else if count > 0 {

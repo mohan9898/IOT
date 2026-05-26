@@ -941,20 +941,11 @@ func (h *Handler) handleSysMessage(topic string, payload []byte) {
 	clientID := parts[4]
 	event := parts[5]
 
-	switch event {
-	case "connected":
+	if event == "connected" {
 		device, err := h.db.GetDevice(clientID)
 		if err == nil && device != nil && device.ID != "" {
 			h.db.UpdateDeviceStatus(device.ID, "online")
 			h.logger.Info("Device connected via $SYS",
-				zap.String("device_id", clientID),
-			)
-		}
-	case "disconnected":
-		device, err := h.db.GetDevice(clientID)
-		if err == nil && device != nil && device.ID != "" {
-			h.db.UpdateDeviceStatus(device.ID, "offline")
-			h.logger.Info("Device disconnected via $SYS",
 				zap.String("device_id", clientID),
 			)
 		}

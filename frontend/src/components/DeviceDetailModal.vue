@@ -7,7 +7,15 @@
           <div class="flex items-center min-w-0">
             <span class="text-4xl mr-3 flex-shrink-0">{{ icon }}</span>
             <div class="min-w-0">
-              <h2 class="text-xl font-bold text-gray-800 truncate">{{ device.name }}</h2>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-bold text-gray-800 truncate">{{ device.name }}</h2>
+                <span
+                  :class="['px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0',
+                    device.status === 'online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700']"
+                >
+                  {{ device.status === 'online' ? '在线' : '离线' }}
+                </span>
+              </div>
               <p class="text-xs text-gray-500 font-mono truncate">{{ device.id }}</p>
             </div>
           </div>
