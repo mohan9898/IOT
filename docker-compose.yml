@@ -59,6 +59,8 @@ services:
       - MQTT_PORT=${MQTT_PORT:-8040}
       # 连接协议：wss / ssl / tcp / ws
       - MQTT_PROTOCOL=${MQTT_PROTOCOL:-wss}
+      # WebSocket 连接路径（例如 /mqtt，仅 ws/wss 协议生效）
+      - MQTT_PATH=${MQTT_PATH:-/mqtt}
       # MQTT 认证用户名（Broker 要求时填写）
       - MQTT_USERNAME=${MQTT_USERNAME}
       # MQTT 认证密码（Broker 要求时填写）

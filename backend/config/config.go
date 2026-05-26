@@ -135,6 +135,9 @@ Password: "p9UPpz2i.H48stE",             // MQTT 密码（通过环境变量配�
 	if os.Getenv("MQTT_PROTOCOL") != "" {
 		cfg.MQTT.Protocol = os.Getenv("MQTT_PROTOCOL")
 	}
+	if os.Getenv("MQTT_PATH") != "" {
+		cfg.MQTT.Path = os.Getenv("MQTT_PATH")
+	}
 	if os.Getenv("MQTT_TLS_ENABLED") != "" {
 		if enabled, err := strconv.ParseBool(os.Getenv("MQTT_TLS_ENABLED")); err == nil {
 			cfg.MQTT.TLSEnabled = enabled
