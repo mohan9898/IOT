@@ -55,8 +55,8 @@ services:
       # ===== MQTT 连接配置 =====
       # MQTT Broker 地址（默认使用 EMQX 公共测试服务器）
       - MQTT_BROKER=${MQTT_BROKER:-d11aab19.ala.cn-hangzhou.emqxsl.cn}
-      # MQTT 端口：8040(WSS加密) / 8883(TLS加密)
-      - MQTT_PORT=${MQTT_PORT:-8040}
+      # MQTT 端口：8084(WSS加密) / 8883(TLS加密)
+      - MQTT_PORT=${MQTT_PORT:-8084}
       # 连接协议：wss / ssl / tcp / ws
       - MQTT_PROTOCOL=${MQTT_PROTOCOL:-wss}
       # WebSocket 连接路径（例如 /mqtt，仅 ws/wss 协议生效）

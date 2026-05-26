@@ -74,9 +74,9 @@ func Load() *Config {
 			CORSAllowedOrigins: []string{},           // 默认允许的源（空表示使用默认策略）
 		},
 		MQTT: MQTTConfig{
-			Protocol: "wss",                                     // 使用 WebSocket Secure 协议
+			Protocol: "ssl",                                     // 使用 TLS 协议
 			Broker: "d11aab19.ala.cn-hangzhou.emqxsl.cn",                     // EMQX 服务器地址
-			Port: 8040,                                      // WebSocket TLS 端口
+			Port: 8883,                                      // TLS 端口
 			Path: "/mqtt",                                     // WebSocket 路径
 			ClientIDPrefix: "iot-manager-",                            // 客户端 ID 前缀
 			Username: "taiyi",                        // MQTT 用户名（通过环境变量配置）
