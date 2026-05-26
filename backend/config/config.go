@@ -75,12 +75,12 @@ func Load() *Config {
 		},
 		MQTT: MQTTConfig{
 			Protocol: "ssl",                                     // 使用 TLS 协议
-			Broker: "d11aab19.ala.cn-hangzhou.emqxsl.cn",                     // EMQX 服务器地址
+			Broker: "your-mqtt-broker.example.com",                     // MQTT 服务器地址（通过环境变量配置）
 			Port: 8883,                                      // TLS 端口
 			Path: "/mqtt",                                     // WebSocket 路径
 			ClientIDPrefix: "iot-manager-",                            // 客户端 ID 前缀
-			Username: "taiyi",                        // MQTT 用户名（通过环境变量配置）
-Password: "p9UPpz2i.H48stE",             // MQTT 密码（通过环境变量配置）
+			Username: "",                        // MQTT 用户名（通过环境变量配置）
+			Password: "",             // MQTT 密码（通过环境变量配置）
 			TLSEnabled: true,                                     // 启用 TLS 加密连接
 			CACertPath: "",                                        // CA 证书路径（使用系统根证书）
 		},
