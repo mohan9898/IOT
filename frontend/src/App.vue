@@ -72,8 +72,8 @@
             <!-- Logo -->
             <div class="flex items-center flex-shrink-0">
               <span class="text-2xl mr-2">🔌</span>
-              <span class="text-base sm:text-lg font-bold text-gray-800 hidden sm:inline whitespace-nowrap">元枢物联【mtrk】</span>
-              <span class="text-base font-bold text-gray-800 sm:hidden">mtrk</span>
+              <span class="text-base sm:text-lg font-bold text-gray-800 hidden sm:inline whitespace-nowrap">元枢物联【myrk】</span>
+              <span class="text-base font-bold text-gray-800 sm:hidden">myrk</span>
             </div>
             
             <!-- 桌面端导航 -->
