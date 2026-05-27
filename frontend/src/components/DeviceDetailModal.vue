@@ -85,6 +85,24 @@
             </button>
           </div>
 
+          <!-- 高级控制 -->
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <button
+              @click="sendCommand('RESTART')"
+              :disabled="loading"
+              class="py-3 rounded-xl transition-all font-medium disabled:opacity-50 bg-yellow-100 text-yellow-700 border-2 border-yellow-300 hover:bg-yellow-50"
+            >
+              🔄 远程重启
+            </button>
+            <button
+              @click="fetchLogs"
+              :disabled="loading"
+              class="py-3 rounded-xl transition-all font-medium disabled:opacity-50 bg-purple-100 text-purple-700 border-2 border-purple-300 hover:bg-purple-50"
+            >
+              📋 获取日志
+            </button>
+          </div>
+
           <!-- 光照阈值设置 -->
           <div class="bg-gray-50 rounded-xl p-5">
             <div class="flex justify-between items-center mb-3">
@@ -106,6 +124,32 @@
             >
               设置阈值
             </button>
+          </div>
+
+          <!-- 命令执行结果 -->
+          <div v-if="commandResult" :class="['rounded-xl p-4', commandResult.success ? 'bg-green-50' : 'bg-red-50']">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium" :class="commandResult.success ? 'text-green-700' : 'text-red-700'">
+                {{ commandResult.success ? '✓ 执行成功' : '✗ 执行失败' }}
+              </span>
+              <span class="text-xs text-gray-500">{{ commandResult.ts }}</span>
+            </div>
+            <p class="text-sm text-gray-600">{{ commandResult.message }}</p>
+          </div>
+
+          <!-- 设备日志 -->
+          <div v-if="logs.length > 0" class="bg-gray-50 rounded-xl p-4">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-sm font-medium text-gray-700">设备日志</span>
+              <button @click="logs = []" class="text-xs text-gray-500 hover:text-gray-700">清空</button>
+            </div>
+            <div class="max-h-48 overflow-y-auto space-y-2">
+              <div v-for="(log, index) in logs" :key="index" class="flex items-start gap-2 text-xs">
+                <span class="text-gray-400 flex-shrink-0">{{ formatTimestamp(log.ts) }}</span>
+                <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-medium">{{ log.action }}</span>
+                <span class="text-gray-600">{{ log.detail }}</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -195,6 +239,8 @@ const emit = defineEmits(['close'])
 const threshold = ref(100)
 const customCommand = ref('')
 const loading = ref(false)
+const logs = ref([])
+const commandResult = ref(null)
 
 const icon = computed(() => store.getDeviceIcon(props.device?.type))
 
@@ -264,6 +310,25 @@ const sendCustomCommand = async () => {
   if (!customCommand.value) return
   await sendCommand(customCommand.value)
   customCommand.value = ''
+}
+
+const fetchLogs = async () => {
+  loading.value = true
+  try {
+    const response = await api.sendCommand(props.device.id, 'LOGS')
+    if (response && response.logs) {
+      logs.value = response.logs
+    }
+  } catch (e) {
+    alert('获取日志失败: ' + e.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+const formatTimestamp = (seconds) => {
+  const date = new Date(seconds * 1000)
+  return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 const handleSetThreshold = async () => {

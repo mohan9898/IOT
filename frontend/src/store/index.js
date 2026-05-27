@@ -170,16 +170,50 @@ const store = reactive({
     this.ws = new WebSocket(`${protocol}//${host}/api/ws?token=${this.token}`)
     this.ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
-      if (data.topic && data.topic.includes('status')) {
-        const oldDevices = [...this.devices]
-        this.loadDevices()
-        this.loadStats()
+      
+      if (data.topic) {
+        // 状态更新
+        if (data.topic.includes('status')) {
+          const oldDevices = [...this.devices]
+          this.loadDevices()
+          this.loadStats()
+          
+          if (typeof data.payload === 'string') {
+            try {
+              const payload = JSON.parse(data.payload)
+              this.checkDeviceAlerts(oldDevices, payload)
+            } catch (e) {}
+          }
+        }
         
-        if (typeof data.payload === 'string') {
-          try {
-            const payload = JSON.parse(data.payload)
-            this.checkDeviceAlerts(oldDevices, payload)
-          } catch (e) {}
+        // 命令结果
+        if (data.topic.includes('result')) {
+          if (typeof data.payload === 'string') {
+            try {
+              const payload = JSON.parse(data.payload)
+              this.$emit('commandResult', payload)
+            } catch (e) {}
+          }
+        }
+        
+        // 设备日志
+        if (data.topic.includes('logs')) {
+          if (typeof data.payload === 'string') {
+            try {
+              const payload = JSON.parse(data.payload)
+              this.$emit('deviceLogs', payload)
+            } catch (e) {}
+          }
+        }
+        
+        // 错误上报
+        if (data.topic.includes('error')) {
+          if (typeof data.payload === 'string') {
+            try {
+              const payload = JSON.parse(data.payload)
+              this.$emit('deviceError', payload)
+            } catch (e) {}
+          }
         }
       }
     }
