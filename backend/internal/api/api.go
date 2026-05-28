@@ -181,7 +181,7 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		metrics.RecordLoginAttempt("invalid_request")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效请求"})
 		return
 	}
 
@@ -189,14 +189,14 @@ func (h *Handler) Login(c *gin.Context) {
 	if err != nil {
 		h.logger.Warn("Login failed: user not found", zap.String("username", req.Username))
 		metrics.RecordLoginAttempt("failed")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "凭据无效"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		h.logger.Warn("Login failed: invalid password", zap.String("username", req.Username))
 		metrics.RecordLoginAttempt("failed")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "凭据无效"})
 		return
 	}
 
@@ -204,7 +204,7 @@ func (h *Handler) Login(c *gin.Context) {
 	if err != nil {
 		h.logger.Error("Failed to generate token", zap.Error(err))
 		metrics.RecordLoginAttempt("failed")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "服务器错误"})
 		return
 	}
 
@@ -226,38 +226,38 @@ func (h *Handler) Register(c *gin.Context) {
 		Password string `json:"password"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效请求"})
 		return
 	}
 
 	if len(req.Username) < 3 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Username must be at least 3 characters"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名至少需要3个字符"})
 		return
 	}
 
 	if len(req.Password) < 6 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 6 characters"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "密码至少需要6个字符"})
 		return
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		h.logger.Error("Failed to hash password", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "服务器错误"})
 		return
 	}
 
 	user, err := h.db.CreateUser(req.Username, string(hash))
 	if err != nil {
 		h.logger.Warn("Registration failed: username exists", zap.String("username", req.Username))
-		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		c.JSON(http.StatusConflict, gin.H{"error": "用户名已存在"})
 		return
 	}
 
 	token, err := h.jwtManager.GenerateToken(user.ID, user.Username)
 	if err != nil {
 		h.logger.Error("Failed to generate token", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "服务器错误"})
 		return
 	}
 
@@ -288,7 +288,7 @@ func (h *Handler) GetUserInfo(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusBadRequest, gin.H{"error": "Username required"})
+	c.JSON(http.StatusBadRequest, gin.H{"error": "用户名必填"})
 }
 
 func (h *Handler) UpdateAccount(c *gin.Context) {
@@ -298,39 +298,39 @@ func (h *Handler) UpdateAccount(c *gin.Context) {
 		Password    string `json:"password"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效请求"})
 		return
 	}
 
 	if len(req.NewUsername) < 3 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Username must be at least 3 characters"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名至少需要3个字符"})
 		return
 	}
 
 	user, err := h.db.GetUserByUsername(req.OldUsername)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户不存在"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "密码不正确"})
 		return
 	}
 
 	checkUser, err := h.db.GetUserByUsername(req.NewUsername)
 	if err == nil && checkUser != nil && checkUser.ID != user.ID {
-		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		c.JSON(http.StatusConflict, gin.H{"error": "用户名已存在"})
 		return
 	}
 
 	if err := h.db.UpdateUser(user.ID, req.NewUsername, ""); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update username"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新用户名失败"})
 		return
 	}
 
 	h.logger.Info("Account updated", zap.String("old_username", req.OldUsername), zap.String("new_username", req.NewUsername))
-	c.JSON(http.StatusOK, gin.H{"message": "Username updated", "username": req.NewUsername})
+	c.JSON(http.StatusOK, gin.H{"message": "用户名已更新", "username": req.NewUsername})
 }
 
 func (h *Handler) UpdatePassword(c *gin.Context) {
@@ -340,39 +340,39 @@ func (h *Handler) UpdatePassword(c *gin.Context) {
 		NewPassword string `json:"new_password"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效请求"})
 		return
 	}
 
 	if len(req.NewPassword) < 6 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 6 characters"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "密码至少需要6个字符"})
 		return
 	}
 
 	user, err := h.db.GetUserByUsername(req.Username)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户不存在"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "密码不正确"})
 		return
 	}
 
 	newHash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "服务器错误"})
 		return
 	}
 
 	if err := h.db.UpdatePassword(user.ID, string(newHash)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新密码失败"})
 		return
 	}
 
 	h.logger.Info("Password updated", zap.String("username", req.Username))
-	c.JSON(http.StatusOK, gin.H{"message": "Password updated"})
+	c.JSON(http.StatusOK, gin.H{"message": "密码已更新"})
 }
 
 func (h *Handler) GetDevices(c *gin.Context) {
