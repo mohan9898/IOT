@@ -1093,7 +1093,6 @@ func (h *Handler) handleSmartLightMessage(topic string, payload []byte) {
 			presenceVal = 1.0
 		}
 		h.db.CreateMetric(status.ID, "presence", presenceVal)
-		}
 	case "state":
 		devices, _ := h.db.GetDevices()
 		for _, d := range devices {
