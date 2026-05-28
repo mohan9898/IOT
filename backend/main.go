@@ -85,9 +85,8 @@ func main() {
 	if mqttClient != nil {
 		topics := []string{
 			"smart_light/#",
+			"pc_controller/#",
 			"+/register",
-			"+/status",
-			"+/control",
 			"+/metric",
 			"$SYS/brokers/+/clients/+/connected",
 			"$SYS/brokers/+/clients/+/disconnected",

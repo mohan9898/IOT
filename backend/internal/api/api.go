@@ -1036,7 +1036,12 @@ func (h *Handler) handleSmartLightMessage(topic string, payload []byte) {
 			return
 		}
 		if device != nil {
-			device.Status = "online"
+			// 根据设备发送的 online 字段更新状态
+			if status.Online {
+				device.Status = "online"
+			} else {
+				device.Status = "offline"
+			}
 			// 根据设备类型构建metadata
 			metadata := map[string]interface{}{
 				"lux":       status.Lux,
@@ -1070,12 +1075,16 @@ func (h *Handler) handleSmartLightMessage(topic string, payload []byte) {
 			}
 		} else {
 			h.logger.Warn("Device not found, creating new one", zap.String("id", status.ID))
-			// 创建设备
+			// 创建设备，根据 online 字段设置状态
+			deviceStatus := "offline"
+			if status.Online {
+				deviceStatus = "online"
+			}
 			newDevice := &db.Device{
 				ID:     status.ID,
 				Name:   status.Name,
 				Type:   "smart_light",
-				Status: "online",
+				Status: deviceStatus,
 				Metadata: map[string]interface{}{
 					"lux":       status.Lux,
 					"presence":  status.Presence,
@@ -1171,7 +1180,12 @@ func (h *Handler) handlePCControllerMessage(topic string, payload []byte) {
 		if json.Unmarshal(payload, &status) == nil {
 			device, _ := h.db.GetDevice(status.ID)
 			if device != nil {
-				device.Status = "online"
+				// 根据设备发送的 online 字段更新状态
+				if status.Online {
+					device.Status = "online"
+				} else {
+					device.Status = "offline"
+				}
 				device.Metadata = map[string]interface{}{
 					"relay":     status.Relay,
 					"online":    status.Online,
@@ -1240,7 +1254,19 @@ func (h *Handler) handleGenericDeviceMessage(topic string, payload []byte) {
 			if json.Unmarshal(payload, &status) == nil {
 				device, _ := h.db.GetDevice(deviceID)
 				if device != nil {
-					device.Status = "online"
+					// 根据状态消息中的 online 字段更新设备状态
+					if onlineVal, ok := status["online"]; ok {
+						if onlineBool, ok := onlineVal.(bool); ok {
+							if onlineBool {
+								device.Status = "online"
+							} else {
+								device.Status = "offline"
+							}
+						}
+					} else {
+						// 默认设置为在线（向后兼容）
+						device.Status = "online"
+					}
 					if status != nil {
 						device.Metadata = status
 					}
