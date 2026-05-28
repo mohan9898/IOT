@@ -26,7 +26,7 @@
       </div>
 
       <!-- 内容 -->
-      <div class="p-6 space-y-6">
+      <div :class="['p-6 space-y-6 transition-all duration-300', device.status === 'offline' ? 'opacity-70' : '']">
         <!-- 智能灯特殊界面 -->
         <div v-if="device.type === 'smart_light'" class="space-y-6">
           <!-- 当前工作状态 -->
@@ -83,31 +83,38 @@
           <div class="grid grid-cols-3 gap-3">
             <button
               @click="sendCommand(device.type === 'pc_controller' ? 'POWER' : 'ON')"
-              :disabled="loading"
-              :class="['py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2', lightOn ? 'bg-green-500 text-white border-green-500' : 'bg-white text-green-600 border-green-300 hover:bg-green-50']"
+              :disabled="loading || device.status === 'offline'"
+              :class="['py-4 rounded-xl transition-all font-semibold border-2', 
+                (loading || device.status === 'offline') ? 'opacity-50 cursor-not-allowed' : '',
+                lightOn ? 'bg-green-500 text-white border-green-500' : 'bg-white text-green-600 border-green-300 hover:bg-green-50']"
             >
               {{ device.type === 'pc_controller' ? '🔌 开机' : '🔆 开灯' }}
             </button>
             <button
               @click="sendCommand('OFF')"
-              :disabled="loading"
-              :class="['py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2', !lightOn ? 'bg-gray-500 text-white border-gray-500' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50']"
+              :disabled="loading || device.status === 'offline'"
+              :class="['py-4 rounded-xl transition-all font-semibold border-2',
+                (loading || device.status === 'offline') ? 'opacity-50 cursor-not-allowed' : '',
+                !lightOn ? 'bg-gray-500 text-white border-gray-500' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50']"
             >
               {{ device.type === 'pc_controller' ? '🔌 断电' : '🌙 关灯' }}
             </button>
             <button
               v-if="device.type === 'smart_light'"
               @click="sendCommand('AUTO')"
-              :disabled="loading"
-              :class="['py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2', isAutoMode ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-blue-600 border-blue-300 hover:bg-blue-50']"
+              :disabled="loading || device.status === 'offline'"
+              :class="['py-4 rounded-xl transition-all font-semibold border-2',
+                (loading || device.status === 'offline') ? 'opacity-50 cursor-not-allowed' : '',
+                isAutoMode ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-blue-600 border-blue-300 hover:bg-blue-50']"
             >
               🤖 自动
             </button>
             <button
               v-else-if="device.type === 'pc_controller'"
               @click="sendCommand('RESET')"
-              :disabled="loading"
-              class="py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2 bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-50"
+              :disabled="loading || device.status === 'offline'"
+              :class="['py-4 rounded-xl transition-all font-semibold border-2 bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-50',
+                (loading || device.status === 'offline') ? 'opacity-50 cursor-not-allowed' : '']"
             >
               🔄 重启PC
             </button>
@@ -117,22 +124,25 @@
           <div class="grid grid-cols-3 gap-3 mt-3">
             <button
               @click="sendCommand('RESTART')"
-              :disabled="loading"
-              class="py-3 rounded-xl transition-all font-medium disabled:opacity-50 bg-yellow-100 text-yellow-700 border-2 border-yellow-300 hover:bg-yellow-50"
+              :disabled="loading || device.status === 'offline'"
+              :class="['py-3 rounded-xl transition-all font-medium bg-yellow-100 text-yellow-700 border-2 border-yellow-300 hover:bg-yellow-50',
+                (loading || device.status === 'offline') ? 'opacity-50 cursor-not-allowed' : '']"
             >
               🔄 远程重启
             </button>
             <button
               @click="fetchLogs"
-              :disabled="loading"
-              class="py-3 rounded-xl transition-all font-medium disabled:opacity-50 bg-purple-100 text-purple-700 border-2 border-purple-300 hover:bg-purple-50"
+              :disabled="loading || device.status === 'offline'"
+              :class="['py-3 rounded-xl transition-all font-medium bg-purple-100 text-purple-700 border-2 border-purple-300 hover:bg-purple-50',
+                (loading || device.status === 'offline') ? 'opacity-50 cursor-not-allowed' : '']"
             >
               📋 获取日志
             </button>
             <button
               @click="showOtaModal = true"
-              :disabled="loading"
-              class="py-3 rounded-xl transition-all font-medium disabled:opacity-50 bg-cyan-100 text-cyan-700 border-2 border-cyan-300 hover:bg-cyan-50"
+              :disabled="loading || device.status === 'offline'"
+              :class="['py-3 rounded-xl transition-all font-medium bg-cyan-100 text-cyan-700 border-2 border-cyan-300 hover:bg-cyan-50',
+                (loading || device.status === 'offline') ? 'opacity-50 cursor-not-allowed' : '']"
             >
               ⬆️ OTA升级
             </button>
@@ -150,12 +160,14 @@
               min="10"
               max="500"
               step="10"
-              class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              :disabled="device.status === 'offline'"
+              :class="['w-full h-2 bg-gray-200 rounded-lg appearance-none', device.status === 'offline' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer']"
             />
             <button
               @click="handleSetThreshold"
-              :disabled="loading"
-              class="mt-3 w-full bg-orange-500 text-white py-2 rounded-xl hover:bg-orange-600 transition-all font-semibold disabled:opacity-50"
+              :disabled="loading || device.status === 'offline'"
+              :class="['mt-3 w-full bg-orange-500 text-white py-2 rounded-xl hover:bg-orange-600 transition-all font-semibold',
+                (loading || device.status === 'offline') ? 'opacity-50 cursor-not-allowed' : '']"
             >
               设置阈值
             </button>
@@ -223,6 +235,14 @@
             </div>
           </div>
 
+          <!-- 离线提示 -->
+          <div v-if="device.status === 'offline'" class="bg-orange-50 border-2 border-orange-200 rounded-xl p-4">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">⚠️</span>
+              <span class="text-orange-700 font-medium">设备当前离线，无法执行操作</span>
+            </div>
+          </div>
+
           <!-- 自定义命令 -->
           <div>
             <h4 class="font-semibold text-gray-700 mb-3">发送命令</h4>
@@ -230,14 +250,15 @@
               <input
                 v-model="customCommand"
                 type="text"
-                class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                :disabled="device.status === 'offline'"
+                :class="['flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent', device.status === 'offline' ? 'opacity-50 cursor-not-allowed' : '']"
                 placeholder="输入命令"
                 @keyup.enter="sendCustomCommand"
               />
               <button
                 @click="sendCustomCommand"
-                :disabled="loading || !customCommand"
-                class="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-semibold disabled:opacity-50"
+                :disabled="loading || !customCommand || device.status === 'offline'"
+                :class="['px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-semibold', (loading || !customCommand || device.status === 'offline') ? 'opacity-50 cursor-not-allowed' : '']"
               >
                 发送
               </button>
@@ -370,6 +391,11 @@ const close = () => {
 }
 
 const sendCommand = async (command) => {
+  if (props.device.status === 'offline') {
+    alert('设备离线，无法执行命令')
+    return
+  }
+  
   const meta = props.device?.metadata
   const cmd = command.toUpperCase()
 
@@ -410,6 +436,11 @@ const sendCustomCommand = async () => {
 }
 
 const fetchLogs = async () => {
+  if (props.device.status === 'offline') {
+    alert('设备离线，无法获取日志')
+    return
+  }
+  
   loading.value = true
   try {
     const response = await api.sendCommand(props.device.id, 'LOGS')
@@ -445,6 +476,11 @@ const otaWithCustomUrl = async () => {
 }
 
 const handleSetThreshold = async () => {
+  if (props.device.status === 'offline') {
+    alert('设备离线，无法设置阈值')
+    return
+  }
+  
   const meta = props.device?.metadata
   const prevThreshold = meta?.threshold
 
