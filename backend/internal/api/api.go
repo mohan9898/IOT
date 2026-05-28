@@ -636,6 +636,8 @@ func (h *Handler) SendCommand(c *gin.Context) {
 	topic := fmt.Sprintf("%s/control", req.DeviceID)
 	if device.Type == "smart_light" {
 		topic = "smart_light/control"
+	} else if device.Type == "pc_controller" {
+		topic = "pc_controller/control"
 	}
 
 	// 尝试发送简单的字符串命令 (ON/OFF) 而不是 JSON
@@ -905,14 +907,17 @@ func (c *WebSocketClient) writePump() {
 
 type SmartLightStatus struct {
 	ID        string  `json:"id"`
+	Name      string  `json:"name"`
 	Lux       float64 `json:"lux"`
 	Presence  bool    `json:"presence"`
-	Light     string  `json:"light"`
+	Light     bool    `json:"light"`
 	Mode      string  `json:"mode"`
-	Threshold int     `json:"threshold"`
-	Uptime    int     `json:"uptime"`
-	RSSI      int     `json:"rssi"`
+	Threshold float64 `json:"threshold"`
+	Uptime    int64   `json:"uptime"`
+	RSSI      int     `json:"wifi_rssi"`
 	Online    bool    `json:"online"`
+	Version   string  `json:"version"`
+	FreeHeap  int     `json:"free_heap"`
 }
 
 func (h *Handler) HandleMQTTMessage(msg mqtt.Message) {
@@ -937,6 +942,8 @@ func (h *Handler) HandleMQTTMessage(msg mqtt.Message) {
 
 	if strings.HasPrefix(topic, "smart_light/") {
 		h.handleSmartLightMessage(topic, msg.Payload())
+	} else if strings.HasPrefix(topic, "pc_controller/") {
+		h.handlePCControllerMessage(topic, msg.Payload())
 	} else {
 		h.handleGenericDeviceMessage(topic, msg.Payload())
 	}
@@ -963,8 +970,13 @@ func (h *Handler) handleSysMessage(topic string, payload []byte) {
 }
 
 func (h *Handler) handleSmartLightMessage(topic string, payload []byte) {
+	h.logger.Info("handleSmartLightMessage called", 
+		zap.String("topic", topic), 
+		zap.String("payload", string(payload)))
+
 	parts := strings.Split(topic, "/")
 	if len(parts) < 2 {
+		h.logger.Warn("Invalid topic format", zap.String("topic", topic))
 		return
 	}
 
@@ -976,7 +988,12 @@ func (h *Handler) handleSmartLightMessage(topic string, payload []byte) {
 			ID   string `json:"id"`
 			Name string `json:"name"`
 		}
-		if json.Unmarshal(payload, &reg) == nil && reg.ID != "" {
+		if err := json.Unmarshal(payload, &reg); err != nil {
+			h.logger.Error("Failed to unmarshal register payload", zap.Error(err))
+			return
+		}
+		if reg.ID != "" {
+			h.logger.Info("Processing device registration", zap.String("id", reg.ID), zap.String("name", reg.Name))
 			device, err := h.db.GetDevice(reg.ID)
 			if err == nil && device != nil && device.ID != "" {
 				h.db.UpdateDeviceStatus(device.ID, "online")
@@ -994,30 +1011,88 @@ func (h *Handler) handleSmartLightMessage(topic string, payload []byte) {
 		}
 	case "status":
 		var status SmartLightStatus
-		if json.Unmarshal(payload, &status) == nil {
-			device, _ := h.db.GetDevice(status.ID)
-			if device != nil {
-				device.Status = "online"
-				device.Metadata = map[string]interface{}{
+		if err := json.Unmarshal(payload, &status); err != nil {
+			h.logger.Error("Failed to unmarshal status payload", zap.Error(err), zap.String("payload", string(payload)))
+			return
+		}
+		h.logger.Info("Processing device status update", 
+			zap.String("id", status.ID), 
+			zap.Float64("lux", status.Lux), 
+			zap.Bool("presence", status.Presence),
+			zap.Bool("light", status.Light),
+			zap.Int64("uptime", status.Uptime))
+
+		device, err := h.db.GetDevice(status.ID)
+		if err != nil {
+			h.logger.Error("Failed to get device from db", zap.String("id", status.ID), zap.Error(err))
+			return
+		}
+		if device != nil {
+			device.Status = "online"
+			// 根据设备类型构建metadata
+			metadata := map[string]interface{}{
+				"lux":       status.Lux,
+				"presence":  status.Presence,
+				"light":     status.Light,
+				"uptime":    status.Uptime,
+				"rssi":      status.RSSI,
+				"online":    status.Online,
+				"version":   status.Version,
+				"free_heap": status.FreeHeap,
+			}
+			// 如果设备有名字，更新
+			if status.Name != "" {
+				device.Name = status.Name
+			}
+			// 智能灯特有字段
+			if device.Type == "smart_light" {
+				// 检查是否有mode和threshold（设备端可能没有）
+				if status.Mode != "" {
+					metadata["mode"] = status.Mode
+				}
+				if status.Threshold > 0 {
+					metadata["threshold"] = status.Threshold
+				}
+			}
+			device.Metadata = metadata
+			if err := h.db.UpdateDevice(device); err != nil {
+				h.logger.Error("Failed to update device in db", zap.String("id", device.ID), zap.Error(err))
+			} else {
+				h.logger.Info("Device updated successfully", zap.String("id", device.ID))
+			}
+		} else {
+			h.logger.Warn("Device not found, creating new one", zap.String("id", status.ID))
+			// 创建设备
+			newDevice := &db.Device{
+				ID:     status.ID,
+				Name:   status.Name,
+				Type:   "smart_light",
+				Status: "online",
+				Metadata: map[string]interface{}{
 					"lux":       status.Lux,
 					"presence":  status.Presence,
 					"light":     status.Light,
-					"mode":      status.Mode,
-					"threshold": status.Threshold,
 					"uptime":    status.Uptime,
 					"rssi":      status.RSSI,
 					"online":    status.Online,
-				}
-				h.db.UpdateDevice(device)
+					"version":   status.Version,
+					"free_heap": status.FreeHeap,
+				},
+				CreatedAt: time.Now(),
 			}
+			if err := h.db.CreateDevice(newDevice); err != nil {
+				h.logger.Error("Failed to create new device", zap.String("id", status.ID), zap.Error(err))
+			}
+		}
 
-			h.db.CreateMetric(status.ID, "lux", status.Lux)
-			h.db.CreateMetric(status.ID, "rssi", float64(status.RSSI))
-			presenceVal := 0.0
-			if status.Presence {
-				presenceVal = 1.0
-			}
-			h.db.CreateMetric(status.ID, "presence", presenceVal)
+		// 记录指标
+		h.db.CreateMetric(status.ID, "lux", status.Lux)
+		h.db.CreateMetric(status.ID, "rssi", float64(status.RSSI))
+		presenceVal := 0.0
+		if status.Presence {
+			presenceVal = 1.0
+		}
+		h.db.CreateMetric(status.ID, "presence", presenceVal)
 		}
 	case "state":
 		devices, _ := h.db.GetDevices()
@@ -1039,16 +1114,18 @@ func (h *Handler) handleSmartLightMessage(topic string, payload []byte) {
 				h.db.CreateMetric(d.ID, "presence", presence)
 			}
 		}
+	case "result", "logs", "error":
+		// 这些消息直接通过WebSocket转发，不需要额外处理
+		h.logger.Info("Forwarding device message", zap.String("type", subTopic))
 	}
 }
 
-func (h *Handler) handleGenericDeviceMessage(topic string, payload []byte) {
+func (h *Handler) handlePCControllerMessage(topic string, payload []byte) {
 	parts := strings.Split(topic, "/")
 	if len(parts) < 2 {
 		return
 	}
 
-	deviceID := parts[0]
 	subTopic := parts[1]
 
 	switch subTopic {
@@ -1056,7 +1133,6 @@ func (h *Handler) handleGenericDeviceMessage(topic string, payload []byte) {
 		var reg struct {
 			ID   string `json:"id"`
 			Name string `json:"name"`
-			Type string `json:"type"`
 		}
 		if json.Unmarshal(payload, &reg) == nil && reg.ID != "" {
 			device, err := h.db.GetDevice(reg.ID)
@@ -1066,7 +1142,7 @@ func (h *Handler) handleGenericDeviceMessage(topic string, payload []byte) {
 				h.db.CreateDevice(&db.Device{
 					ID:        reg.ID,
 					Name:      reg.Name,
-					Type:      reg.Type,
+					Type:      "pc_controller",
 					Status:    "online",
 					Metadata:  make(map[string]interface{}),
 					CreatedAt: time.Now(),
@@ -1075,24 +1151,105 @@ func (h *Handler) handleGenericDeviceMessage(topic string, payload []byte) {
 			}
 		}
 	case "status":
-		var status map[string]interface{}
+		var status struct {
+			ID       string `json:"id"`
+			Name     string `json:"name"`
+			Relay    bool   `json:"relay"`
+			Online   bool   `json:"online"`
+			RSSI     int    `json:"wifi_rssi"`
+			Uptime   int64  `json:"uptime"`
+			Version  string `json:"version"`
+			FreeHeap int    `json:"free_heap"`
+		}
 		if json.Unmarshal(payload, &status) == nil {
-			device, _ := h.db.GetDevice(deviceID)
+			device, _ := h.db.GetDevice(status.ID)
 			if device != nil {
 				device.Status = "online"
-				if status != nil {
-					device.Metadata = status
+				device.Metadata = map[string]interface{}{
+					"relay":     status.Relay,
+					"online":    status.Online,
+					"rssi":      status.RSSI,
+					"uptime":    status.Uptime,
+					"version":   status.Version,
+					"free_heap": status.FreeHeap,
+				}
+				if status.Name != "" {
+					device.Name = status.Name
 				}
 				h.db.UpdateDevice(device)
 			}
+			// 记录指标
+			h.db.CreateMetric(status.ID, "rssi", float64(status.RSSI))
+		}
+	case "result", "logs", "error":
+		// 这些消息直接通过WebSocket转发，不需要额外处理
+		h.logger.Info("Forwarding device message", zap.String("type", subTopic))
+	}
+}
+
+func (h *Handler) handleGenericDeviceMessage(topic string, payload []byte) {
+	parts := strings.Split(topic, "/")
+	if len(parts) < 2 {
+		return
+	}
+
+	// 处理前缀主题：smart_light/status 或 pc_controller/status
+	// 如果主题有前缀，我们不能用 payload 中的 id，不是用 parts[0]
+	subTopic := parts[1]
+	var deviceID string
+
+	switch subTopic {
+	case "register":
+		var reg struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+			Type string `json:"type"`
+		}
+		if json.Unmarshal(payload, &reg) == nil && reg.ID != "" {
+			deviceID = reg.ID
+			device, err := h.db.GetDevice(deviceID)
+			if err == nil && device != nil && device.ID != "" {
+				h.db.UpdateDeviceStatus(deviceID, "online")
+			} else {
+				h.db.CreateDevice(&db.Device{
+					ID:        deviceID,
+					Name:      reg.Name,
+					Type:      reg.Type,
+					Status:    "online",
+					Metadata:  make(map[string]interface{}),
+					CreatedAt: time.Now(),
+				})
+				h.db.UpdateDeviceStatus(deviceID, "online")
+			}
+		}
+	case "status":
+		// 从payload中解析 id
+		var statusWithID struct {
+			ID string `json:"id"`
+		}
+		if json.Unmarshal(payload, &statusWithID) == nil && statusWithID.ID != "" {
+			deviceID = statusWithID.ID
+			var status map[string]interface{}
+			if json.Unmarshal(payload, &status) == nil {
+				device, _ := h.db.GetDevice(deviceID)
+				if device != nil {
+					device.Status = "online"
+					if status != nil {
+						device.Metadata = status
+					}
+					h.db.UpdateDevice(device)
+				}
+			}
 		}
 	case "metric":
-		var metric struct {
+		var metricWithID struct {
+			ID    string  `json:"id"`
 			Name  string  `json:"name"`
 			Value float64 `json:"value"`
 		}
-		if json.Unmarshal(payload, &metric) == nil {
-			h.db.CreateMetric(deviceID, metric.Name, metric.Value)
+		if json.Unmarshal(payload, &metricWithID) == nil && metricWithID.ID != "" {
+			deviceID = metricWithID.ID
+			h.db.CreateMetric(deviceID, metricWithID.Name, metricWithID.Value)
 		}
 	}
 }
