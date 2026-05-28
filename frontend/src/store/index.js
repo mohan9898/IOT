@@ -178,41 +178,55 @@ const store = reactive({
           this.loadDevices()
           this.loadStats()
           
+          let payload = data.payload
           if (typeof data.payload === 'string') {
             try {
-              const payload = JSON.parse(data.payload)
-              this.checkDeviceAlerts(oldDevices, payload)
+              payload = JSON.parse(data.payload)
             } catch (e) {}
+          }
+          if (payload && payload.id) {
+            this.checkDeviceAlerts(oldDevices, payload)
           }
         }
         
         // 命令结果
         if (data.topic.includes('result')) {
+          let payload = data.payload;
           if (typeof data.payload === 'string') {
             try {
-              const payload = JSON.parse(data.payload)
-              this.$emit('commandResult', payload)
+              payload = JSON.parse(data.payload);
             } catch (e) {}
           }
+          // 创建自定义事件
+          const resultEvent = new CustomEvent('commandResult', { detail: payload });
+          window.dispatchEvent(resultEvent);
         }
         
         // 设备日志
         if (data.topic.includes('logs')) {
+          let payload = data.payload;
           if (typeof data.payload === 'string') {
             try {
-              const payload = JSON.parse(data.payload)
-              this.$emit('deviceLogs', payload)
+              payload = JSON.parse(data.payload);
             } catch (e) {}
           }
+          const logsEvent = new CustomEvent('deviceLogs', { detail: payload });
+          window.dispatchEvent(logsEvent);
         }
         
         // 错误上报
         if (data.topic.includes('error')) {
+          let payload = data.payload;
           if (typeof data.payload === 'string') {
             try {
-              const payload = JSON.parse(data.payload)
-              this.$emit('deviceError', payload)
+              payload = JSON.parse(data.payload);
             } catch (e) {}
+          }
+          const errorEvent = new CustomEvent('deviceError', { detail: payload });
+          window.dispatchEvent(errorEvent);
+          // 显示错误通知
+          if (this.notificationsEnabled && payload) {
+            this.sendNotification('设备错误', payload.detail || '设备发生错误', '⚠️');
           }
         }
       }

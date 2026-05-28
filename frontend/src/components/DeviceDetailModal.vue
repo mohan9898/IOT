@@ -58,35 +58,63 @@
               <div class="text-xs text-orange-600 mb-1 font-medium whitespace-nowrap">运行时长</div>
               <div class="text-2xl font-bold text-orange-700">{{ formatUptime(device.metadata?.uptime || 0) }}</div>
             </div>
+            <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl p-4">
+              <div class="text-xs text-cyan-600 mb-1 font-medium whitespace-nowrap">WiFi信号</div>
+              <div class="text-2xl font-bold text-cyan-700">{{ device.metadata?.rssi || '--' }} <span class="text-xs font-normal">dBm</span></div>
+            </div>
+          </div>
+          
+          <!-- 设备信息 -->
+          <div class="bg-gray-50 rounded-xl p-4">
+            <h4 class="font-semibold text-gray-700 mb-3">设备详情</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <div v-if="device.metadata?.version" class="bg-white rounded-lg p-3">
+                <div class="text-xs text-gray-500 uppercase font-medium">固件版本</div>
+                <div class="text-sm font-semibold text-gray-800">{{ device.metadata.version }}</div>
+              </div>
+              <div v-if="device.metadata?.free_heap" class="bg-white rounded-lg p-3">
+                <div class="text-xs text-gray-500 uppercase font-medium">可用内存</div>
+                <div class="text-sm font-semibold text-gray-800">{{ device.metadata.free_heap }} bytes</div>
+              </div>
+            </div>
           </div>
 
           <!-- 快捷控制 -->
           <div class="grid grid-cols-3 gap-3">
             <button
-              @click="sendCommand('ON')"
+              @click="sendCommand(device.type === 'pc_controller' ? 'POWER' : 'ON')"
               :disabled="loading"
               :class="['py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2', lightOn ? 'bg-green-500 text-white border-green-500' : 'bg-white text-green-600 border-green-300 hover:bg-green-50']"
             >
-              🔆 开灯
+              {{ device.type === 'pc_controller' ? '🔌 开机' : '🔆 开灯' }}
             </button>
             <button
               @click="sendCommand('OFF')"
               :disabled="loading"
               :class="['py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2', !lightOn ? 'bg-gray-500 text-white border-gray-500' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50']"
             >
-              🌙 关灯
+              {{ device.type === 'pc_controller' ? '🔌 断电' : '🌙 关灯' }}
             </button>
             <button
+              v-if="device.type === 'smart_light'"
               @click="sendCommand('AUTO')"
               :disabled="loading"
               :class="['py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2', isAutoMode ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-blue-600 border-blue-300 hover:bg-blue-50']"
             >
               🤖 自动
             </button>
+            <button
+              v-else-if="device.type === 'pc_controller'"
+              @click="sendCommand('RESET')"
+              :disabled="loading"
+              class="py-4 rounded-xl transition-all font-semibold disabled:opacity-50 border-2 bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-50"
+            >
+              🔄 重启PC
+            </button>
           </div>
 
           <!-- 高级控制 -->
-          <div class="grid grid-cols-2 gap-3 mt-3">
+          <div class="grid grid-cols-3 gap-3 mt-3">
             <button
               @click="sendCommand('RESTART')"
               :disabled="loading"
@@ -100,6 +128,13 @@
               class="py-3 rounded-xl transition-all font-medium disabled:opacity-50 bg-purple-100 text-purple-700 border-2 border-purple-300 hover:bg-purple-50"
             >
               📋 获取日志
+            </button>
+            <button
+              @click="showOtaModal = true"
+              :disabled="loading"
+              class="py-3 rounded-xl transition-all font-medium disabled:opacity-50 bg-cyan-100 text-cyan-700 border-2 border-cyan-300 hover:bg-cyan-50"
+            >
+              ⬆️ OTA升级
             </button>
           </div>
 
@@ -222,11 +257,71 @@
         </div>
       </div>
     </div>
+
+    <!-- OTA升级模态框 -->
+    <div
+      v-if="showOtaModal"
+      class="fixed inset-0 bg-black/50 z-60 flex items-center justify-center p-4"
+    >
+      <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-gray-800">⬆️ 远程 OTA 升级</h3>
+          <button
+            @click="showOtaModal = false"
+            class="text-gray-400 hover:text-gray-600 text-2xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <div class="flex gap-3 mb-4">
+              <button
+                @click="otaWithConfigUrl"
+                :disabled="loading"
+                class="flex-1 py-3 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 transition-all font-semibold disabled:opacity-50"
+              >
+                使用配置 URL
+              </button>
+              <button
+                @click="otaWithCustomUrl"
+                :disabled="loading || !customOtaUrl"
+                class="flex-1 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-semibold disabled:opacity-50"
+              >
+                使用自定义 URL
+              </button>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                自定义固件 URL (可选)
+              </label>
+              <input
+                v-model="customOtaUrl"
+                type="url"
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="http://example.com/firmware.bin"
+              />
+            </div>
+          </div>
+
+          <div class="text-sm text-gray-500 bg-gray-50 p-4 rounded-xl">
+            <p class="font-medium mb-2">⚠️ 升级注意事项：</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li>升级过程中请勿断电</li>
+              <li>设备会自动重启完成升级</li>
+              <li>可在设备日志中查看升级进度</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import store from '../store'
 import api from '../services/api'
 
@@ -241,6 +336,8 @@ const customCommand = ref('')
 const loading = ref(false)
 const logs = ref([])
 const commandResult = ref(null)
+const showOtaModal = ref(false)
+const customOtaUrl = ref('')
 
 const icon = computed(() => store.getDeviceIcon(props.device?.type))
 
@@ -331,6 +428,22 @@ const formatTimestamp = (seconds) => {
   return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
+const otaWithConfigUrl = async () => {
+  showOtaModal.value = false
+  await sendCommand('UPDATE')
+}
+
+const otaWithCustomUrl = async () => {
+  if (!customOtaUrl.value) {
+    alert('请先输入固件 URL')
+    return
+  }
+  
+  showOtaModal.value = false
+  await sendCommand(`UPDATE=${customOtaUrl.value}`)
+  customOtaUrl.value = ''
+}
+
 const handleSetThreshold = async () => {
   const meta = props.device?.metadata
   const prevThreshold = meta?.threshold
@@ -367,4 +480,45 @@ const handleDelete = async () => {
     loading.value = false
   }
 }
+
+// 事件处理函数
+const handleCommandResult = (event) => {
+  const result = event.detail
+  if (result) {
+    commandResult.value = result
+    // 3秒后自动清除结果
+    setTimeout(() => {
+      if (commandResult.value === result) {
+        commandResult.value = null
+      }
+    }, 5000)
+  }
+}
+
+const handleDeviceLogs = (event) => {
+  const data = event.detail
+  if (data && data.logs) {
+    logs.value = data.logs
+  }
+}
+
+const handleDeviceError = (event) => {
+  const error = event.detail
+  if (error) {
+    alert(`设备错误: ${error.detail || '未知错误'}`)
+  }
+}
+
+// 生命周期钩子
+onMounted(() => {
+  window.addEventListener('commandResult', handleCommandResult)
+  window.addEventListener('deviceLogs', handleDeviceLogs)
+  window.addEventListener('deviceError', handleDeviceError)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('commandResult', handleCommandResult)
+  window.removeEventListener('deviceLogs', handleDeviceLogs)
+  window.removeEventListener('deviceError', handleDeviceError)
+})
 </script>
