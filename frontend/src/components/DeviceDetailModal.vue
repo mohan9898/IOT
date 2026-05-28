@@ -25,7 +25,7 @@
         </div>
       </div>
 
-      <!-- 内容 -->
+      <!-- 内容（带离线透明度效果） -->
       <div :class="['p-6 space-y-6 transition-all duration-300', device.status === 'offline' ? 'opacity-70' : '']">
         <!-- 智能灯特殊界面 -->
         <div v-if="device.type === 'smart_light'" class="space-y-6">
@@ -265,9 +265,11 @@
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- 删除按钮（不受离线透明度影响，始终正常显示） -->
-        <div class="pt-4 border-t border-gray-100 [&_*]:opacity-100">
+      <!-- 删除按钮（放在离线容器外面，完全不受透明度影响） -->
+      <div class="px-6 pb-6 pt-0">
+        <div class="border-t border-gray-100 pt-4">
           <button
             @click="handleDelete"
             :disabled="loading"
