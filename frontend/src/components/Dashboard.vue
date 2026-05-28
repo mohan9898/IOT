@@ -281,6 +281,12 @@ function refreshMQTT() {
 }
 
 async function handleDeviceClick(device) {
+  // 检查设备是否离线
+  if (device.status === 'offline') {
+    alert(`设备 "${device.name}" 当前离线，无法进行控制操作！`)
+    return
+  }
+  
   // 如果设备数据不完整，从 store.devices 中查找完整数据
   let fullDevice = device
   if (store.devices.length > 0) {
