@@ -966,6 +966,14 @@ func (h *Handler) handleSysMessage(topic string, payload []byte) {
 				zap.String("device_id", clientID),
 			)
 		}
+	} else if event == "disconnected" {
+		device, err := h.db.GetDevice(clientID)
+		if err == nil && device != nil && device.ID != "" {
+			h.db.UpdateDeviceStatus(device.ID, "offline")
+			h.logger.Info("Device disconnected via $SYS",
+				zap.String("device_id", clientID),
+			)
+		}
 	}
 }
 
