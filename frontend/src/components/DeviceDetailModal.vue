@@ -266,12 +266,12 @@
           </div>
         </div>
 
-        <!-- 删除按钮 -->
-        <div class="pt-4 border-t border-gray-100">
+        <!-- 删除按钮（不受离线透明度影响，始终正常显示） -->
+        <div class="pt-4 border-t border-gray-100 [&_*]:opacity-100">
           <button
             @click="handleDelete"
             :disabled="loading"
-            class="w-full bg-red-500 text-white py-3 rounded-xl hover:bg-red-600 transition-all font-semibold disabled:opacity-50"
+            class="w-full bg-red-500 text-white py-3 rounded-xl hover:bg-red-600 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             删除设备
           </button>
