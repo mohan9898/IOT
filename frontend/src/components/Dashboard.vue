@@ -145,7 +145,8 @@
           <div
             v-for="device in dashboard.recentDevices"
             :key="device.id"
-            class="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+            @click="handleDeviceClick(device)"
+            class="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-blue-50 hover:cursor-pointer transition-colors"
           >
             <div class="flex items-center gap-3 min-w-0">
               <span class="text-lg flex-shrink-0">{{ getIcon(device.type) }}</span>
@@ -154,14 +155,17 @@
                 <p class="text-xs text-gray-400 truncate">{{ device.id }}</p>
               </div>
             </div>
-            <span
-              :class="[
-                'px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 ml-2',
-                device.status === 'online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-              ]"
-            >
-              {{ device.status === 'online' ? '在线' : '离线' }}
-            </span>
+            <div class="flex items-center gap-2">
+              <span
+                :class="[
+                  'px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0',
+                  device.status === 'online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                ]"
+              >
+                {{ device.status === 'online' ? '在线' : '离线' }}
+              </span>
+              <span class="text-gray-400 text-lg">➜</span>
+            </div>
           </div>
         </div>
       </div>
@@ -274,6 +278,18 @@ async function loadMQTTStatus() {
 
 function refreshMQTT() {
   loadMQTTStatus()
+}
+
+async function handleDeviceClick(device) {
+  // 如果设备数据不完整，从 store.devices 中查找完整数据
+  let fullDevice = device
+  if (store.devices.length > 0) {
+    const found = store.devices.find(d => d.id === device.id)
+    if (found) {
+      fullDevice = found
+    }
+  }
+  store.selectDevice(fullDevice)
 }
 
 onMounted(() => {
